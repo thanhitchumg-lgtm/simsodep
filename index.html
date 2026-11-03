@@ -324,7 +324,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
 <footer>
   <div class="wrap">
     <div><b>Kho Sim Số</b><br>Địa chỉ cửa hàng: (cập nhật tại đây)</div>
-    <div>Điện thoại / Zalo: <span class="mono">0900 000 000</span><br>Giờ làm việc: 8:00 – 21:00 mỗi ngày</div>
+    <div>Điện thoại / Zalo: <span class="mono">0900 000 000</span> · <a href="admin.html" style="opacity:.7">Quản trị</a><br>Giờ làm việc: 8:00 – 21:00 mỗi ngày</div>
   </div>
 </footer>
 
@@ -366,10 +366,32 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
     return b;
   }
   var fC=$("fCarrier"), fK=$("fCat");
-  fC.appendChild(chip("Tất cả","carrier","all"));
-  Object.keys(CARRIERS).forEach(function(id){fC.appendChild(chip(CARRIERS[id].name,"carrier",id,CARRIERS[id].color));});
-  fK.appendChild(chip("Tất cả","cat","all"));
-  CATS.forEach(function(c){fK.appendChild(chip(c.label,"cat",c.id));});
+  function buildFilters(){
+    fC.innerHTML='<span class="flabel">Nhà mạng</span>'; fK.innerHTML='<span class="flabel">Loại số</span>';
+    fC.appendChild(chip("Tất cả","carrier","all"));
+    Object.keys(CARRIERS).forEach(function(id){fC.appendChild(chip(CARRIERS[id].name,"carrier",id,CARRIERS[id].color));});
+    fK.appendChild(chip("Tất cả","cat","all"));
+    CATS.forEach(function(c){fK.appendChild(chip(c.label,"cat",c.id));});
+    $("carriers").innerHTML=Object.keys(CARRIERS).map(function(id){
+      var c=CARRIERS[id];
+      return '<div class="cr" style="--c:'+c.color+'"><h3>'+esc(c.name)+'</h3><div class="pf">'+c.prefixes.map(esc).join(" · ")+'</div><button type="button" data-go="'+id+'">Xem số '+esc(c.name)+' →</button></div>';
+    }).join("");
+    syncChips();
+  }
+  function applyConfig(cfg){
+    if(!cfg||!Array.isArray(cfg.carriers)||!Array.isArray(cfg.categories)) return;
+    var cs={}, ks=[];
+    cfg.carriers.forEach(function(c){
+      if(c&&/^[a-z0-9]{1,30}$/.test(c.id)&&c.name) cs[c.id]={name:String(c.name),color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:Array.isArray(c.prefixes)?c.prefixes.map(String):[]};
+    });
+    cfg.categories.forEach(function(k){ if(k&&/^[a-z0-9]{1,30}$/.test(k.id)&&k.label) ks.push({id:k.id,label:String(k.label)}); });
+    if(Object.keys(cs).length) CARRIERS=cs;
+    if(ks.length) CATS=ks;
+    CATLABEL={}; CATS.forEach(function(c){CATLABEL[c.id]=c.label;});
+    if(!CARRIERS[S.carrier]) S.carrier="all";
+    if(!CATLABEL[S.cat]) S.cat="all";
+    buildFilters();
+  }
 
   function syncChips(){
     document.querySelectorAll(".chip[data-key]").forEach(function(b){
@@ -381,17 +403,15 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
     if(b){S[b.dataset.key]=b.dataset.val;S.page=1;render();}
   });
 
-  /* carriers section */
-  $("carriers").innerHTML=Object.keys(CARRIERS).map(function(id){
-    var c=CARRIERS[id];
-    return '<div class="cr" style="--c:'+c.color+'"><h3>'+c.name+'</h3><div class="pf">'+c.prefixes.join(" · ")+'</div><button type="button" data-go="'+id+'">Xem số '+c.name+' →</button></div>';
-  }).join("");
+  /* carriers section: dựng trong buildFilters() */
   $("carriers").addEventListener("click",function(e){
     var b=e.target.closest("[data-go]");
     if(!b)return;
     S.carrier=b.dataset.go;S.page=1;render();
     $("kho-so").scrollIntoView({behavior:"smooth"});
   });
+
+  buildFilters();
 
   /* ---------- search ---------- */
   function matcher(q){
@@ -484,12 +504,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
 
   /* ---------- Firebase: đọc kho số thật ---------- */
   var firebaseConfig = {
-  apiKey: "AIzaSyDF7q9Lk_NXdDJYhS5QU0gJtbH8Zq10sGk",
-  authDomain: "simsodep-4ad4d.firebaseapp.com",
-  projectId: "simsodep-4ad4d",
-  storageBucket: "simsodep-4ad4d.firebasestorage.app",
-  messagingSenderId: "144535496573",
-  appId: "1:144535496573:web:3d3b03bc4b419cf1f78e14"
+    apiKey: "AIzaSyDF7q9Lk_NXdDJYhS5QU0gJtbH8Zq10sGk",
+    authDomain: "simsodep-4ad4d.firebaseapp.com",
+    projectId: "simsodep-4ad4d",
+    storageBucket: "simsodep-4ad4d.firebasestorage.app",
+    messagingSenderId: "144535496573",
+    appId: "1:144535496573:web:3d3b03bc4b419cf1f78e14"
   };
   var COLLECTION="sims", CACHE_KEY="sims_cache_v1", CACHE_MS=60000;
   function showStatus(html){ $("grid").innerHTML='<div class="empty">'+html+'</div>'; $("pager").innerHTML=""; $("count").textContent=""; }
@@ -508,18 +528,22 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
     showStatus("Đang tải kho số…");
     try{
       var c=JSON.parse(sessionStorage.getItem(CACHE_KEY)||"null");
-      if(c&&Date.now()-c.t<CACHE_MS){ setStock(c.rows); return; }
+      if(c&&Date.now()-c.t<CACHE_MS){ applyConfig(c.cfg); setStock(c.rows); return; }
     }catch(e){}
     Promise.all([
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")
     ]).then(function(m){
       var db=m[1].getFirestore(m[0].initializeApp(firebaseConfig));
-      return m[1].getDocs(m[1].collection(db,COLLECTION));
-    }).then(function(snap){
-      var rows=snap.docs.map(function(d){return d.data();});
-      try{sessionStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),rows:rows}));}catch(e){}
-      setStock(rows);
+      return Promise.all([
+        m[1].getDocs(m[1].collection(db,COLLECTION)),
+        m[1].getDoc(m[1].doc(db,"config","lists")).catch(function(){return null;})
+      ]);
+    }).then(function(r){
+      var rows=r[0].docs.map(function(d){return d.data();});
+      var cfg=r[1]&&r[1].exists()?{carriers:r[1].data().carriers,categories:r[1].data().categories}:null;
+      try{sessionStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),rows:rows,cfg:cfg}));}catch(e){}
+      applyConfig(cfg); setStock(rows);
     }).catch(function(err){
       showStatus("<b>Không tải được kho số.</b><br>"+esc(err.code||err.message||"Lỗi không rõ")+". Kiểm tra cấu hình Firebase và luật Firestore.");
     });

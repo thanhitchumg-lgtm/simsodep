@@ -67,7 +67,7 @@ button,input,select{font:inherit;color:inherit}
 /* app */
 .top{background:var(--card);border-bottom:1px solid var(--line)}
 .top .in{max-width:1080px;margin:0 auto;padding:0 18px;height:60px;display:flex;align-items:center;gap:14px}
-.top .who{margin-left:auto;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .who{margin-left:auto;min-width:0;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 60px;display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;align-items:start}
 @media(max-width:860px){.wrap{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
@@ -129,6 +129,16 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 .errlist{max-height:130px;overflow:auto;font-size:13px;color:var(--bad);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:8px}
 .errlist div{padding:1px 0}
 .mrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+.h3{font-size:16px;margin:16px 0 4px}
+.cfgrow{display:grid;gap:8px;align-items:center;margin-bottom:8px}
+.cfgrow.car{grid-template-columns:44px minmax(0,1fr) minmax(0,1.2fr) auto}
+.cfgrow.cat{grid-template-columns:minmax(0,1fr) auto}
+.cfgrow input[type=text]{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
+.cfgrow input[type=text]:focus-visible{outline:none;border-color:var(--accent)}
+.cfgrow input[type=color]{width:44px;height:40px;border:1.5px solid var(--line);border-radius:9px;background:var(--bg);padding:3px;cursor:pointer}
+.cfgrow .used{font-size:12px;color:var(--muted);white-space:nowrap;padding:0 6px}
+@media(max-width:560px){.cfgrow.car{grid-template-columns:44px 1fr auto}.cfgrow.car input.mono{grid-column:1/-1;order:5}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -156,6 +166,7 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
     <div class="in">
       <div class="brand"><i aria-hidden="true"></i>Quản trị kho số</div>
       <div class="who" id="who"></div>
+      <button class="btn ghost" id="openCfg" type="button" style="padding:8px 14px">Nhà mạng và loại số</button>
       <button class="btn ghost" id="logout" type="button" style="padding:8px 14px">Đăng xuất</button>
     </div>
   </header>
@@ -247,6 +258,27 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
   </div>
 </div>
 
+
+<!-- Cài đặt nhà mạng và loại số -->
+<div class="ov" id="ovCfg" hidden role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+  <div class="modal">
+    <h2 id="cfgTitle">Nhà mạng và loại số</h2>
+    <h3 class="h3">Nhà mạng</h3>
+    <p class="sub">Màu dùng cho dải màu trên ô số. Đầu số (cách nhau dấu phẩy) giúp tự nhận diện nhà mạng khi nhập số.</p>
+    <div id="cfgCarriers"></div>
+    <button class="btn ghost sm" id="cfgAddCarrier" type="button">+ Thêm nhà mạng</button>
+    <h3 class="h3">Loại số</h3>
+    <p class="sub">Loại thêm mới được chọn tay khi nhập số. Các loại có sẵn vẫn được tự nhận diện theo đuôi số.</p>
+    <div id="cfgCats"></div>
+    <button class="btn ghost sm" id="cfgAddCat" type="button">+ Thêm loại số</button>
+    <div class="msg" id="cfgMsg" role="status" style="margin-top:12px"></div>
+    <div class="mrow" style="margin-top:4px">
+      <button class="btn" id="cfgSave" type="button">Lưu cài đặt</button>
+      <button class="btn ghost" id="cfgClose" type="button">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- Xác nhận xoá toàn bộ -->
 <div class="ov" id="ovDel" hidden role="alertdialog" aria-modal="true" aria-labelledby="delTitle" aria-describedby="delText">
   <div class="modal small">
@@ -288,17 +320,20 @@ const configured = !String(firebaseConfig.apiKey).startsWith("PASTE");
 $("setupWarn").hidden = configured;
 
 /* ---------- dữ liệu dùng chung với trang bán ---------- */
-const CARRIERS = {
+const DEFAULT_CARRIERS = {
   viettel:{name:"Viettel",color:"#e11d2e",prefixes:["096","097","098","086","032","033","034","035","036","037","038","039"]},
   vina:{name:"VinaPhone",color:"#1f7ae0",prefixes:["091","094","088","081","082","083","084","085"]},
   mobi:{name:"MobiFone",color:"#0aa37f",prefixes:["090","093","089","070","076","077","078","079"]},
   vnmb:{name:"Vietnamobile",color:"#f59e0b",prefixes:["092","056","058"]},
   gmb:{name:"Gmobile",color:"#8b5cf6",prefixes:["099","059"]}
 };
-const CATS = {
+const DEFAULT_CATS = {
   nguquy:"Ngũ quý", tuquy:"Tứ quý", tamhoa:"Tam hoa", sanh:"Số tiến", thantai:"Thần Tài",
   ongdia:"Ông Địa", locphat:"Lộc Phát", ganh:"Gánh đảo", lap:"Lặp đôi", thuong:"Số thường"
 };
+// Danh sách đang dùng. Được thay bằng cấu hình lưu trong Firestore (config/lists) nếu có.
+let CARRIERS = structuredClone(DEFAULT_CARRIERS);
+let CATS = {...DEFAULT_CATS};
 function classify(n){
   const t5=n.slice(-5), t4=n.slice(-4), t3=n.slice(-3), t2=n.slice(-2);
   if(/^(\d)\1{4}$/.test(t5)) return "nguquy";
@@ -312,17 +347,28 @@ function classify(n){
   if(/^(\d)(\d)\1\2$/.test(t4)) return "lap";
   return "thuong";
 }
-function carrierOf(n){
-  const p=n.slice(0,3);
-  return Object.keys(CARRIERS).find(id=>CARRIERS[id].prefixes.includes(p)) || "";
+function carrierOf(n){                      // đầu số dài nhất khớp thì thắng
+  let best="", bestLen=0;
+  for(const [id,c] of Object.entries(CARRIERS))
+    for(const p of c.prefixes) if(n.startsWith(p) && p.length>bestLen){ best=id; bestLen=p.length; }
+  return best;
 }
+// loại tự nhận diện chỉ dùng nếu loại đó còn tồn tại trong danh sách
+function autoCat(n){ const k=classify(n); return CATS[k] ? k : (CATS.thuong ? "thuong" : ""); }
 const fmtNum = n => n.slice(0,4)+" "+n.slice(4,7)+" "+n.slice(7);
 const fmtVnd = n => Number(n).toLocaleString("vi-VN")+"đ";
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ---------- đổ dữ liệu vào listbox ---------- */
-Object.entries(CARRIERS).forEach(([id,c])=>$("carrier").add(new Option(c.name,id)));
-Object.entries(CATS).forEach(([id,l])=>$("cat").add(new Option(l,id)));
+function fillSelects(){
+  const cv=$("carrier").value, kv=$("cat").value;
+  $("carrier").length=1; $("cat").length=1;
+  Object.entries(CARRIERS).forEach(([id,c])=>$("carrier").add(new Option(c.name,id)));
+  Object.entries(CATS).forEach(([id,l])=>$("cat").add(new Option(l,id)));
+  if(CARRIERS[cv]) $("carrier").value=cv;
+  if(CATS[kv]) $("cat").value=kv;
+}
+fillSelects();
 
 if(!configured){ /* vẫn cho xem giao diện nhưng không kết nối */ }
 const app  = configured ? initializeApp(firebaseConfig) : null;
@@ -390,11 +436,11 @@ $("cat").addEventListener("change",()=>{catDirty=true;refresh();});
 function autoFill(d){
   const h=$("autoHint");
   if(d.length<10){ h.textContent=""; return; }
-  const c=carrierOf(d), k=classify(d), parts=[];
+  const c=carrierOf(d), k=autoCat(d), parts=[];
   if(!carrierDirty && c){ $("carrier").value=c; }
   if(!catDirty){ $("cat").value=k; }
   if(c) parts.push(CARRIERS[c].name); else parts.push("không nhận ra nhà mạng, hãy chọn tay");
-  parts.push(CATS[k]);
+  parts.push(CATS[k] || "chưa có loại phù hợp, hãy chọn tay");
   h.textContent="Tự nhận diện: "+parts.join(" · ")+". Bạn có thể đổi.";
 }
 
@@ -402,8 +448,8 @@ function refresh(){
   const d=digits(phoneEl.value), p=Number(digits(priceEl.value)||0), c=$("carrier").value;
   $("pvNum").innerHTML = d.length===10 ? esc(fmtNum(d).slice(0,-3))+"<b>"+esc(fmtNum(d).slice(-3))+"</b>" : "0000 000 <b>000</b>";
   $("pvPrice").textContent = fmtVnd(p);
-  $("pvCarrier").textContent = c ? CARRIERS[c].name : "Nhà mạng";
-  $("pv").style.setProperty("--c", c ? CARRIERS[c].color : "var(--line)");
+  $("pvCarrier").textContent = CARRIERS[c] ? CARRIERS[c].name : "Nhà mạng";
+  $("pv").style.setProperty("--c", CARRIERS[c] ? CARRIERS[c].color : "var(--line)");
   $("priceHint").textContent = p ? "= "+fmtVnd(p) : "";
   $("phoneHint").textContent = d.length && d.length<10 ? "Còn thiếu "+(10-d.length)+" số." : "Nhập 10 số, bắt đầu bằng 0.";
 }
@@ -446,15 +492,29 @@ function setListMsg(t,type){ const m=$("listMsg"); m.textContent=t; m.className=
 
 function resetList(){ ALL=[]; PAGE=1; QUERY=""; $("ls").value=""; $("rows").innerHTML=""; $("pager").innerHTML=""; $("listCount").textContent=""; }
 
+function applyConfig(data){
+  if(data && Array.isArray(data.carriers) && Array.isArray(data.categories) && data.carriers.length && data.categories.length){
+    CARRIERS={}; CATS={};
+    data.carriers.forEach(c=>{ CARRIERS[c.id]={name:c.name,color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:c.prefixes||[]}; });
+    data.categories.forEach(k=>{ CATS[k.id]=k.label; });
+  }else{
+    CARRIERS=structuredClone(DEFAULT_CARRIERS); CATS={...DEFAULT_CATS};
+  }
+  fillSelects(); buildAliases(); refresh(); renderList();
+  if(!$("ovBulk").hidden) analyzeBulk();
+}
+
 function startList(){
   if(unsub||!db) return;
-  unsub=onSnapshot(collection(db,COLLECTION),snap=>{
+  const u1=onSnapshot(doc(db,"config","lists"),snap=>applyConfig(snap.exists()?snap.data():null),()=>applyConfig(null));
+  const u2=onSnapshot(collection(db,COLLECTION),snap=>{
     ALL=snap.docs.map(d=>({id:d.id,...d.data()}));
     ALL.sort((a,b)=>tsOf(b)-tsOf(a)||(a.id<b.id?-1:1));
     renderList();
   },err=>{
     $("rows").innerHTML='<tr><td colspan="5" class="empty">Không đọc được danh sách ('+esc(err.code||err.message)+').</td></tr>';
   });
+  unsub=()=>{u1();u2();};
 }
 
 function matcher(q){
@@ -522,8 +582,8 @@ $("rows").addEventListener("click",async e=>{
 let modalBusy=false;
 function openModal(id,focusId){ $(id).hidden=false; document.body.style.overflow="hidden"; setTimeout(()=>$(focusId).focus(),30); }
 function closeModal(id){ if(modalBusy) return; $(id).hidden=true; document.body.style.overflow=""; }
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal("ovBulk"); closeModal("ovDel"); } });
-["ovBulk","ovDel"].forEach(id=>$(id).addEventListener("mousedown",e=>{ if(e.target===$(id)) closeModal(id); }));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal("ovBulk"); closeModal("ovDel"); closeModal("ovCfg"); } });
+["ovBulk","ovDel","ovCfg"].forEach(id=>$(id).addEventListener("mousedown",e=>{ if(e.target===$(id)) closeModal(id); }));
 
 async function commitChunks(items, apply, onProgress){   // items → writeBatch, mỗi mẻ 400 thao tác
   for(let i=0;i<items.length;i+=400){
@@ -539,15 +599,16 @@ async function commitChunks(items, apply, onProgress){   // items → writeBatch
    ====================================================================== */
 const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"");
 const byLen = arr => arr.sort((a,b)=>b[0].length-a[0].length);
-const CARRIER_ALIAS = byLen(Object.entries({
-  viettel:["viettel","vt"], vina:["vinaphone","vina","vnp"], mobi:["mobifone","mobi"],
-  vnmb:["vietnamobile","vnmb","vnm"], gmb:["gmobile","gmb","gtel"]
-}).flatMap(([id,l])=>l.map(a=>[a,id])));
-const CAT_ALIAS = new Map(Object.entries({
-  nguquy:["nguquy","5quy"], tuquy:["tuquy","4quy"], tamhoa:["tamhoa","3hoa"], sanh:["sotien","sanhtien","sanh"],
-  thantai:["thantai"], ongdia:["ongdia"], locphat:["locphat"], ganh:["ganhdao","ganh"],
-  lap:["lapdoi","lap"], thuong:["sothuong","thuong"]
-}).flatMap(([id,l])=>l.map(a=>[a,id])));
+const EXTRA_CARRIER_ALIAS = {viettel:["vt"], vina:["vina","vnp"], mobi:["mobi"], vnmb:["vnm"], gmb:["gtel"]};
+const EXTRA_CAT_ALIAS = {nguquy:["5quy"], tuquy:["4quy"], tamhoa:["3hoa"], sanh:["sotien","sanhtien"], ganh:["ganhdao"], lap:["lapdoi"], thuong:["sothuong"]};
+let CARRIER_ALIAS=[], CAT_ALIAS=new Map();
+function buildAliases(){
+  CARRIER_ALIAS = byLen(Object.entries(CARRIERS).flatMap(([id,c])=>
+    [...new Set([norm(c.name),id,...(EXTRA_CARRIER_ALIAS[id]||[])].filter(Boolean))].map(a=>[a,id])));
+  CAT_ALIAS = new Map(Object.entries(CATS).flatMap(([id,l])=>
+    [...new Set([norm(l),id,...(EXTRA_CAT_ALIAS[id]||[])].filter(Boolean))].map(a=>[a,id])));
+}
+buildAliases();
 
 function parsePrice(raw){
   const x=String(raw).toLowerCase().replace(/\s+/g,"").replace(/(vnd|vnđ|đ)$/,"");
@@ -583,7 +644,8 @@ function parseLine(line){
   }
   if(!carrier) carrier=carrierOf(num);
   if(!carrier) return {err:"Không nhận ra nhà mạng từ đầu số "+num.slice(0,3)+", hãy ghi rõ nhà mạng"};
-  if(!cat) cat=classify(num);
+  if(!cat) cat=autoCat(num);
+  if(!cat) return {err:"Không tự nhận diện được loại số, hãy ghi rõ loại"};
   return {ok:{number:num,carrier,category:cat,price}};
 }
 
@@ -677,6 +739,100 @@ $("delYes").addEventListener("click",async()=>{
     $("delMsg").className="msg err";
     $("delMsg").textContent="Xoá không thành công ("+(err.code||err.message)+"). Một số số có thể đã bị xoá.";
   }
+});
+
+/* ======================================================================
+   7. CÀI ĐẶT NHÀ MẠNG VÀ LOẠI SỐ (lưu ở config/lists)
+   ====================================================================== */
+let DRAFT=null;
+const countBy = f => { const m={}; ALL.forEach(s=>{ m[s[f]]=(m[s[f]]||0)+1; }); return m; };
+function delBtn(k,i,used){
+  return used ? '<span class="used">'+used.toLocaleString("vi-VN")+' số</span>'
+               : '<button class="del" type="button" data-del="'+k+'" data-i="'+i+'">Xoá</button>';
+}
+function renderCfg(){
+  const uc=countBy("carrier"), uk=countBy("category");
+  $("cfgCarriers").innerHTML=DRAFT.carriers.map((c,i)=>
+    '<div class="cfgrow car">'+
+    '<input type="color" value="'+esc(c.color)+'" data-k="carriers" data-i="'+i+'" data-f="color" aria-label="Màu nhà mạng">'+
+    '<input type="text" value="'+esc(c.name)+'" placeholder="Tên nhà mạng" data-k="carriers" data-i="'+i+'" data-f="name" aria-label="Tên nhà mạng">'+
+    '<input type="text" class="mono" value="'+esc(c.prefixes)+'" placeholder="Đầu số: 096, 097" data-k="carriers" data-i="'+i+'" data-f="prefixes" aria-label="Đầu số">'+
+    delBtn("carriers",i,c.id?uc[c.id]||0:0)+'</div>').join("");
+  $("cfgCats").innerHTML=DRAFT.cats.map((k,i)=>
+    '<div class="cfgrow cat">'+
+    '<input type="text" value="'+esc(k.label)+'" placeholder="Tên loại số" data-k="cats" data-i="'+i+'" data-f="label" aria-label="Tên loại số">'+
+    delBtn("cats",i,k.id?uk[k.id]||0:0)+'</div>').join("");
+}
+function openCfg(){
+  DRAFT={
+    carriers:Object.entries(CARRIERS).map(([id,c])=>({id,name:c.name,color:c.color,prefixes:c.prefixes.join(", ")})),
+    cats:Object.entries(CATS).map(([id,label])=>({id,label}))
+  };
+  $("cfgMsg").textContent=""; $("cfgMsg").className="msg";
+  renderCfg(); openModal("ovCfg","cfgAddCarrier");
+}
+$("openCfg").addEventListener("click",openCfg);
+$("cfgClose").addEventListener("click",()=>closeModal("ovCfg"));
+$("ovCfg").addEventListener("input",e=>{
+  const t=e.target; if(!t.dataset.f) return;
+  DRAFT[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;
+});
+$("ovCfg").addEventListener("click",e=>{
+  const b=e.target.closest("[data-del]"); if(!b) return;
+  DRAFT[b.dataset.del==="cats"?"cats":"carriers"].splice(+b.dataset.i,1);
+  renderCfg();
+});
+$("cfgAddCarrier").addEventListener("click",()=>{
+  DRAFT.carriers.push({id:"",name:"",color:"#2563eb",prefixes:""}); renderCfg();
+  const r=$("cfgCarriers").querySelectorAll('input[data-f="name"]'); r[r.length-1].focus();
+});
+$("cfgAddCat").addEventListener("click",()=>{
+  DRAFT.cats.push({id:"",label:""}); renderCfg();
+  const r=$("cfgCats").querySelectorAll('input[data-f="label"]'); r[r.length-1].focus();
+});
+
+function uniqueId(name,taken){
+  const base=norm(name).slice(0,24) || ("m"+Date.now().toString(36));
+  let id=base, n=2;
+  while(taken.has(id)) id=base+(n++);
+  taken.add(id); return id;
+}
+$("cfgSave").addEventListener("click",async()=>{
+  const fail=m=>{ $("cfgMsg").className="msg err"; $("cfgMsg").textContent=m; };
+  if(!db||!auth.currentUser) return fail("Bạn cần đăng nhập lại.");
+  const takenC=new Set(DRAFT.carriers.map(c=>c.id).filter(Boolean));
+  const takenK=new Set(DRAFT.cats.map(k=>k.id).filter(Boolean));
+  const names=new Set(), owner={}, outC=[], outK=[];
+  for(const c of DRAFT.carriers){
+    const name=c.name.trim();
+    if(!name) return fail("Có nhà mạng chưa nhập tên. Điền tên hoặc bấm Xoá dòng đó.");
+    if(names.has(norm(name))) return fail("Tên nhà mạng bị trùng: "+name+".");
+    names.add(norm(name));
+    const pf=[...new Set(c.prefixes.split(/[\s,;]+/).filter(Boolean))];
+    for(const p of pf){
+      if(!/^0\d{2,5}$/.test(p)) return fail("Đầu số "+p+" chưa đúng. Ví dụ: 096, 0868.");
+      if(owner[p]) return fail("Đầu số "+p+" đang thuộc cả "+owner[p]+" và "+name+".");
+      owner[p]=name;
+    }
+    outC.push({id:c.id||uniqueId(name,takenC),name,color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:pf});
+  }
+  const knames=new Set();
+  for(const k of DRAFT.cats){
+    const label=k.label.trim();
+    if(!label) return fail("Có loại số chưa nhập tên. Điền tên hoặc bấm Xoá dòng đó.");
+    if(knames.has(norm(label))) return fail("Tên loại số bị trùng: "+label+".");
+    knames.add(norm(label));
+    outK.push({id:k.id||uniqueId(label,takenK),label});
+  }
+  if(!outC.length) return fail("Cần ít nhất một nhà mạng.");
+  if(!outK.length) return fail("Cần ít nhất một loại số.");
+  const btn=$("cfgSave"); btn.disabled=true; btn.textContent="Đang lưu…"; $("cfgMsg").textContent="";
+  try{
+    await setDoc(doc(db,"config","lists"),{carriers:outC,categories:outK,updatedAt:serverTimestamp()});
+    closeModal("ovCfg"); setListMsg("Đã lưu cài đặt nhà mạng và loại số.","ok");
+  }catch(err){
+    fail(err.code==="permission-denied" ? "Không có quyền ghi. Hãy cập nhật luật Firestore theo file firestore.rules mới." : "Lưu không thành công ("+(err.code||err.message)+").");
+  }finally{ btn.disabled=false; btn.textContent="Lưu cài đặt"; }
 });
 </script>
 </body>
