@@ -130,15 +130,15 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 .errlist div{padding:1px 0}
 .mrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 
-.h3{font-size:16px;margin:16px 0 4px}
-.cfgrow{display:grid;gap:8px;align-items:center;margin-bottom:8px}
-.cfgrow.car{grid-template-columns:44px minmax(0,1fr) minmax(0,1.2fr) auto}
-.cfgrow.cat{grid-template-columns:minmax(0,1fr) auto}
-.cfgrow input[type=text]{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
-.cfgrow input[type=text]:focus-visible{outline:none;border-color:var(--accent)}
-.cfgrow input[type=color]{width:44px;height:40px;border:1.5px solid var(--line);border-radius:9px;background:var(--bg);padding:3px;cursor:pointer}
-.cfgrow .used{font-size:12px;color:var(--muted);white-space:nowrap;padding:0 6px}
-@media(max-width:560px){.cfgrow.car{grid-template-columns:44px 1fr auto}.cfgrow.car input.mono{grid-column:1/-1;order:5}}
+.h3{display:block;font-size:15px;font-weight:700;margin:14px 0 6px}
+.lbrow{display:flex;gap:8px;align-items:flex-start}
+.lbrow select{flex:1;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:4px;font-size:15px}
+.lbrow select option{padding:5px 8px;border-radius:6px}
+.lbrow .del{white-space:nowrap}
+.addrow{display:flex;gap:8px;margin-top:8px}
+.addrow input{width:190px;max-width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:15px}
+.addrow input:focus-visible{outline:none;border-color:var(--accent)}
+.cfgblk{margin-bottom:6px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -166,7 +166,7 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
     <div class="in">
       <div class="brand"><i aria-hidden="true"></i>Quản trị kho số</div>
       <div class="who" id="who"></div>
-      <button class="btn ghost" id="openCfg" type="button" style="padding:8px 14px">Nhà mạng và loại số</button>
+      <button class="btn ghost" id="openCfg" type="button" style="padding:8px 14px">Nhà mạng, loại số</button>
       <button class="btn ghost" id="logout" type="button" style="padding:8px 14px">Đăng xuất</button>
     </div>
   </header>
@@ -195,7 +195,6 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
             <select id="cat"><option value="">Chọn loại số</option></select>
           </div>
         </div>
-        <div class="hint" id="autoHint" style="margin:-6px 0 12px"></div>
 
         <div class="pvrow">
           <div class="pv" id="pv" style="--c:var(--line)">
@@ -237,11 +236,11 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 <div class="ov" id="ovBulk" hidden role="dialog" aria-modal="true" aria-labelledby="bulkTitle">
   <div class="modal">
     <h2 id="bulkTitle">Thêm nhanh nhiều số</h2>
-    <p class="sub">Mỗi dòng một số, theo thứ tự <b>Số sim, Nhà mạng, Loại số, Giá</b>. Ngăn cách bằng dấu phẩy, dấu ;, dấu |, tab hoặc khoảng trắng. Giá viết liền hoặc dùng dấu chấm (1.500.000), cũng nhận 1500k hoặc 1.5tr.</p>
-<pre class="eg">0988168868, Viettel, Lộc Phát, 3.500.000
+    <p class="sub">Mỗi dòng một số, theo thứ tự <b>Số sim, Nhà mạng, Loại số, Giá</b>. Ngăn cách bằng dấu phẩy, dấu ;, dấu |, tab hoặc khoảng trắng. Giá viết liền hoặc dùng dấu chấm (1.500.000), cũng nhận 1500k hoặc 1.5tr. Ví dụ (tên nhà mạng và loại số thay bằng của bạn):</p>
+<pre class="eg" id="bulkEg">0988168868, Viettel, Lộc Phát, 3.500.000
 0912 562 886 VinaPhone Số thường 1.290.000
-0333529191 ; Viettel ; ; 590000</pre>
-    <p class="sub">Để trống nhà mạng hoặc loại số thì trang tự nhận diện từ đầu số và đuôi số.</p>
+0789123456 | MobiFone | Số tiến | 1.5tr</pre>
+    <p class="sub">Nhà mạng và loại số phải có sẵn trong mục Nhà mạng và loại số. Viết đúng tên, không cần phân biệt hoa thường hay dấu.</p>
     <div class="frow">
       <input id="bulkFile" type="file" accept=".txt,.csv,text/plain" aria-label="Chọn file txt">
       <button class="btn ghost sm" id="bulkSample" type="button">Tải file mẫu</button>
@@ -261,21 +260,35 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 
 <!-- Cài đặt nhà mạng và loại số -->
 <div class="ov" id="ovCfg" hidden role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
-  <div class="modal">
+  <div class="modal small">
     <h2 id="cfgTitle">Nhà mạng và loại số</h2>
-    <h3 class="h3">Nhà mạng</h3>
-    <p class="sub">Màu dùng cho dải màu trên ô số. Đầu số (cách nhau dấu phẩy) giúp tự nhận diện nhà mạng khi nhập số.</p>
-    <div id="cfgCarriers"></div>
-    <button class="btn ghost sm" id="cfgAddCarrier" type="button">+ Thêm nhà mạng</button>
-    <h3 class="h3">Loại số</h3>
-    <p class="sub">Loại thêm mới được chọn tay khi nhập số. Các loại có sẵn vẫn được tự nhận diện theo đuôi số.</p>
-    <div id="cfgCats"></div>
-    <button class="btn ghost sm" id="cfgAddCat" type="button">+ Thêm loại số</button>
-    <div class="msg" id="cfgMsg" role="status" style="margin-top:12px"></div>
-    <div class="mrow" style="margin-top:4px">
-      <button class="btn" id="cfgSave" type="button">Lưu cài đặt</button>
-      <button class="btn ghost" id="cfgClose" type="button">Đóng</button>
+
+    <div class="cfgblk">
+      <label class="h3" for="lbCarrier">Nhà mạng</label>
+      <div class="lbrow">
+        <select id="lbCarrier" size="4" aria-label="Danh sách nhà mạng"></select>
+        <button class="del" id="delCarrier" type="button">Xoá</button>
+      </div>
+      <div class="addrow">
+        <input id="newCarrier" type="text" maxlength="30" placeholder="Tên nhà mạng mới" autocomplete="off">
+        <button class="btn sm" id="addCarrier" type="button">Thêm</button>
+      </div>
     </div>
+
+    <div class="cfgblk">
+      <label class="h3" for="lbCat">Loại số</label>
+      <div class="lbrow">
+        <select id="lbCat" size="5" aria-label="Danh sách loại số"></select>
+        <button class="del" id="delCat" type="button">Xoá</button>
+      </div>
+      <div class="addrow">
+        <input id="newCat" type="text" maxlength="30" placeholder="Tên loại số mới" autocomplete="off">
+        <button class="btn sm" id="addCat" type="button">Thêm</button>
+      </div>
+    </div>
+
+    <div class="msg" id="cfgMsg" role="status"></div>
+    <div class="mrow" style="margin-top:0"><button class="btn ghost" id="cfgClose" type="button">Đóng</button></div>
   </div>
 </div>
 
@@ -320,41 +333,10 @@ const configured = !String(firebaseConfig.apiKey).startsWith("PASTE");
 $("setupWarn").hidden = configured;
 
 /* ---------- dữ liệu dùng chung với trang bán ---------- */
-const DEFAULT_CARRIERS = {
-  viettel:{name:"Viettel",color:"#e11d2e",prefixes:["096","097","098","086","032","033","034","035","036","037","038","039"]},
-  vina:{name:"VinaPhone",color:"#1f7ae0",prefixes:["091","094","088","081","082","083","084","085"]},
-  mobi:{name:"MobiFone",color:"#0aa37f",prefixes:["090","093","089","070","076","077","078","079"]},
-  vnmb:{name:"Vietnamobile",color:"#f59e0b",prefixes:["092","056","058"]},
-  gmb:{name:"Gmobile",color:"#8b5cf6",prefixes:["099","059"]}
-};
-const DEFAULT_CATS = {
-  nguquy:"Ngũ quý", tuquy:"Tứ quý", tamhoa:"Tam hoa", sanh:"Số tiến", thantai:"Thần Tài",
-  ongdia:"Ông Địa", locphat:"Lộc Phát", ganh:"Gánh đảo", lap:"Lặp đôi", thuong:"Số thường"
-};
-// Danh sách đang dùng. Được thay bằng cấu hình lưu trong Firestore (config/lists) nếu có.
-let CARRIERS = structuredClone(DEFAULT_CARRIERS);
-let CATS = {...DEFAULT_CATS};
-function classify(n){
-  const t5=n.slice(-5), t4=n.slice(-4), t3=n.slice(-3), t2=n.slice(-2);
-  if(/^(\d)\1{4}$/.test(t5)) return "nguquy";
-  if(/^(\d)\1{3}$/.test(t4)) return "tuquy";
-  if(/^(\d)\1{2}$/.test(t3)) return "tamhoa";
-  if("0123456789".includes(t3) || "0123456789".includes(t4)) return "sanh";
-  if(t2==="39"||t2==="79") return "thantai";
-  if(t2==="38"||t2==="78") return "ongdia";
-  if(t2==="68"||t2==="86") return "locphat";
-  if(/^(\d)(\d)\2\1$/.test(t4)) return "ganh";
-  if(/^(\d)(\d)\1\2$/.test(t4)) return "lap";
-  return "thuong";
-}
-function carrierOf(n){                      // đầu số dài nhất khớp thì thắng
-  let best="", bestLen=0;
-  for(const [id,c] of Object.entries(CARRIERS))
-    for(const p of c.prefixes) if(n.startsWith(p) && p.length>bestLen){ best=id; bestLen=p.length; }
-  return best;
-}
-// loại tự nhận diện chỉ dùng nếu loại đó còn tồn tại trong danh sách
-function autoCat(n){ const k=classify(n); return CATS[k] ? k : (CATS.thuong ? "thuong" : ""); }
+// Nhà mạng và loại số lấy hoàn toàn từ Firestore (config/lists). Ban đầu rỗng.
+let CARRIER_LIST=[], CAT_LIST=[];          // [{id,name,color}], [{id,label}], giữ thứ tự
+let CARRIERS={}, CATS={};                  // tra cứu theo id: CARRIERS[id]={name,color}, CATS[id]=label
+const PALETTE=["#e11d2e","#1f7ae0","#0aa37f","#f59e0b","#8b5cf6","#ec4899","#14b8a6","#64748b"];
 const fmtNum = n => n.slice(0,4)+" "+n.slice(4,7)+" "+n.slice(7);
 const fmtVnd = n => Number(n).toLocaleString("vi-VN")+"đ";
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -363,8 +345,8 @@ const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 function fillSelects(){
   const cv=$("carrier").value, kv=$("cat").value;
   $("carrier").length=1; $("cat").length=1;
-  Object.entries(CARRIERS).forEach(([id,c])=>$("carrier").add(new Option(c.name,id)));
-  Object.entries(CATS).forEach(([id,l])=>$("cat").add(new Option(l,id)));
+  CARRIER_LIST.forEach(c=>$("carrier").add(new Option(c.name,c.id)));
+  CAT_LIST.forEach(k=>$("cat").add(new Option(k.label,k.id)));
   if(CARRIERS[cv]) $("carrier").value=cv;
   if(CATS[kv]) $("cat").value=kv;
 }
@@ -416,33 +398,21 @@ if(auth){
 /* ======================================================================
    3. FORM THÊM SỐ
    ====================================================================== */
-let carrierDirty=false, catDirty=false;
 const phoneEl=$("phone"), priceEl=$("price");
 const digits = s => s.replace(/\D/g,"");
 
 phoneEl.addEventListener("input",()=>{
   const d=digits(phoneEl.value).slice(0,10);
   phoneEl.value = d.length>7 ? fmtNum(d) : d.length>4 ? d.slice(0,4)+" "+d.slice(4) : d;
-  autoFill(d); refresh();
+  refresh();
 });
 priceEl.addEventListener("input",()=>{
   const d=digits(priceEl.value).slice(0,12);
   priceEl.value = d ? Number(d).toLocaleString("vi-VN") : "";
   refresh();
 });
-$("carrier").addEventListener("change",()=>{carrierDirty=true;refresh();});
-$("cat").addEventListener("change",()=>{catDirty=true;refresh();});
-
-function autoFill(d){
-  const h=$("autoHint");
-  if(d.length<10){ h.textContent=""; return; }
-  const c=carrierOf(d), k=autoCat(d), parts=[];
-  if(!carrierDirty && c){ $("carrier").value=c; }
-  if(!catDirty){ $("cat").value=k; }
-  if(c) parts.push(CARRIERS[c].name); else parts.push("không nhận ra nhà mạng, hãy chọn tay");
-  parts.push(CATS[k] || "chưa có loại phù hợp, hãy chọn tay");
-  h.textContent="Tự nhận diện: "+parts.join(" · ")+". Bạn có thể đổi.";
-}
+$("carrier").addEventListener("change",refresh);
+$("cat").addEventListener("change",refresh);
 
 function refresh(){
   const d=digits(phoneEl.value), p=Number(digits(priceEl.value)||0), c=$("carrier").value;
@@ -472,8 +442,8 @@ $("addForm").addEventListener("submit", async e=>{
     if((await getDoc(ref)).exists()){ setMsg("Số "+fmtNum(num)+" đã có trong kho.","err"); return; }
     await setDoc(ref,{number:num,carrier,category:cat,price,createdAt:serverTimestamp(),createdBy:auth.currentUser.email});
     setMsg("Đã thêm "+fmtNum(num)+" vào kho.","ok");
-    phoneEl.value=""; priceEl.value=""; carrierDirty=false; catDirty=false;
-    $("carrier").value=""; $("cat").value=""; $("autoHint").textContent="";
+    phoneEl.value=""; priceEl.value="";
+    $("carrier").value=""; $("cat").value="";
     refresh(); phoneEl.focus();
   }catch(err){
     setMsg(err.code==="permission-denied" ? "Không có quyền ghi. Kiểm tra UID quản trị trong luật Firestore." : "Lưu không thành công ("+(err.code||err.message)+").","err");
@@ -493,15 +463,16 @@ function setListMsg(t,type){ const m=$("listMsg"); m.textContent=t; m.className=
 function resetList(){ ALL=[]; PAGE=1; QUERY=""; $("ls").value=""; $("rows").innerHTML=""; $("pager").innerHTML=""; $("listCount").textContent=""; }
 
 function applyConfig(data){
-  if(data && Array.isArray(data.carriers) && Array.isArray(data.categories) && data.carriers.length && data.categories.length){
-    CARRIERS={}; CATS={};
-    data.carriers.forEach(c=>{ CARRIERS[c.id]={name:c.name,color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:c.prefixes||[]}; });
-    data.categories.forEach(k=>{ CATS[k.id]=k.label; });
-  }else{
-    CARRIERS=structuredClone(DEFAULT_CARRIERS); CATS={...DEFAULT_CATS};
-  }
+  const okId=x=>x && typeof x.id==="string" && /^[a-z0-9]{1,30}$/.test(x.id);
+  CARRIER_LIST = data && Array.isArray(data.carriers)
+    ? data.carriers.filter(c=>okId(c)&&c.name).map(c=>({id:c.id,name:String(c.name),color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b"})) : [];
+  CAT_LIST = data && Array.isArray(data.categories)
+    ? data.categories.filter(k=>okId(k)&&k.label).map(k=>({id:k.id,label:String(k.label)})) : [];
+  CARRIERS={}; CARRIER_LIST.forEach(c=>{CARRIERS[c.id]={name:c.name,color:c.color};});
+  CATS={}; CAT_LIST.forEach(k=>{CATS[k.id]=k.label;});
   fillSelects(); buildAliases(); refresh(); renderList();
   if(!$("ovBulk").hidden) analyzeBulk();
+  if(!$("ovCfg").hidden) renderCfg();
 }
 
 function startList(){
@@ -599,14 +570,10 @@ async function commitChunks(items, apply, onProgress){   // items → writeBatch
    ====================================================================== */
 const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"");
 const byLen = arr => arr.sort((a,b)=>b[0].length-a[0].length);
-const EXTRA_CARRIER_ALIAS = {viettel:["vt"], vina:["vina","vnp"], mobi:["mobi"], vnmb:["vnm"], gmb:["gtel"]};
-const EXTRA_CAT_ALIAS = {nguquy:["5quy"], tuquy:["4quy"], tamhoa:["3hoa"], sanh:["sotien","sanhtien"], ganh:["ganhdao"], lap:["lapdoi"], thuong:["sothuong"]};
 let CARRIER_ALIAS=[], CAT_ALIAS=new Map();
 function buildAliases(){
-  CARRIER_ALIAS = byLen(Object.entries(CARRIERS).flatMap(([id,c])=>
-    [...new Set([norm(c.name),id,...(EXTRA_CARRIER_ALIAS[id]||[])].filter(Boolean))].map(a=>[a,id])));
-  CAT_ALIAS = new Map(Object.entries(CATS).flatMap(([id,l])=>
-    [...new Set([norm(l),id,...(EXTRA_CAT_ALIAS[id]||[])].filter(Boolean))].map(a=>[a,id])));
+  CARRIER_ALIAS = byLen(CARRIER_LIST.flatMap(c=>[...new Set([norm(c.name),c.id].filter(Boolean))].map(a=>[a,c.id])));
+  CAT_ALIAS = new Map(CAT_LIST.flatMap(k=>[...new Set([norm(k.label),k.id].filter(Boolean))].map(a=>[a,k.id])));
 }
 buildAliases();
 
@@ -635,18 +602,15 @@ function parseLine(line){
   if(!/^0\d{9}$/.test(num)) return {err:"Số điện thoại phải đủ 10 chữ số và bắt đầu bằng 0"};
   const price=parsePrice(priceRaw);
   if(!Number.isFinite(price)||price<1000||price>1e9) return {err:"Giá không hợp lệ ("+priceRaw+")"};
-  let m=norm(mid), carrier="", cat="";
+  let m=norm(mid);
+  if(!CARRIER_LIST.length||!CAT_LIST.length) return {err:"Chưa có nhà mạng hoặc loại số nào. Hãy thêm trong mục Nhà mạng và loại số trước"};
   const hit=CARRIER_ALIAS.find(([a])=>m.startsWith(a));
-  if(hit){ carrier=hit[1]; m=m.slice(hit[0].length); }
-  if(m && m!=="auto" && m!=="tunhandien"){
-    cat=CAT_ALIAS.get(m)||"";
-    if(!cat) return {err:"Không nhận ra nhà mạng hoặc loại số: "+mid};
-  }
-  if(!carrier) carrier=carrierOf(num);
-  if(!carrier) return {err:"Không nhận ra nhà mạng từ đầu số "+num.slice(0,3)+", hãy ghi rõ nhà mạng"};
-  if(!cat) cat=autoCat(num);
-  if(!cat) return {err:"Không tự nhận diện được loại số, hãy ghi rõ loại"};
-  return {ok:{number:num,carrier,category:cat,price}};
+  if(!hit) return {err:"Nhà mạng không có trong danh sách"+(mid?": "+mid:" (dòng thiếu nhà mạng)")};
+  const catKey=m.slice(hit[0].length);
+  if(!catKey) return {err:"Thiếu loại số"};
+  const cat=CAT_ALIAS.get(catKey);
+  if(!cat) return {err:"Loại số không có trong danh sách: "+mid};
+  return {ok:{number:num,carrier:hit[1],category:cat,price}};
 }
 
 let BULK=[];            // các số hợp lệ sẽ nhập
@@ -693,7 +657,9 @@ $("bulkFile").addEventListener("change",async e=>{
   analyzeBulk();
 });
 $("bulkSample").addEventListener("click",()=>{
-  const txt="0988168868, Viettel, Lộc Phát, 3.500.000\n0912 562 886 VinaPhone Số thường 1.290.000\n0333529191 ; Viettel ; ; 590000\n0789 123 456 MobiFone Số tiến 1.5tr\n";
+  const c1=CARRIER_LIST[0]?CARRIER_LIST[0].name:"TênNhàMạng", c2=CARRIER_LIST[1]?CARRIER_LIST[1].name:c1;
+  const k1=CAT_LIST[0]?CAT_LIST[0].label:"TênLoạiSố", k2=CAT_LIST[1]?CAT_LIST[1].label:k1;
+  const txt="0988168868, "+c1+", "+k1+", 3.500.000\n0912 562 886 "+c2+" "+k2+" 1.290.000\n0789123456 | "+c1+" | "+k2+" | 1.5tr\n";
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"}));
   a.download="mau-them-nhanh.txt"; document.body.appendChild(a); a.click(); a.remove();
@@ -742,98 +708,74 @@ $("delYes").addEventListener("click",async()=>{
 });
 
 /* ======================================================================
-   7. CÀI ĐẶT NHÀ MẠNG VÀ LOẠI SỐ (lưu ở config/lists)
+   7. NHÀ MẠNG VÀ LOẠI SỐ (lưu ở config/lists, mỗi thao tác lưu ngay)
    ====================================================================== */
-let DRAFT=null;
 const countBy = f => { const m={}; ALL.forEach(s=>{ m[s[f]]=(m[s[f]]||0)+1; }); return m; };
-function delBtn(k,i,used){
-  return used ? '<span class="used">'+used.toLocaleString("vi-VN")+' số</span>'
-               : '<button class="del" type="button" data-del="'+k+'" data-i="'+i+'">Xoá</button>';
-}
+function cfgMsg(t,type){ const m=$("cfgMsg"); m.textContent=t; m.className="msg"+(type?" "+type:""); }
 function renderCfg(){
-  const uc=countBy("carrier"), uk=countBy("category");
-  $("cfgCarriers").innerHTML=DRAFT.carriers.map((c,i)=>
-    '<div class="cfgrow car">'+
-    '<input type="color" value="'+esc(c.color)+'" data-k="carriers" data-i="'+i+'" data-f="color" aria-label="Màu nhà mạng">'+
-    '<input type="text" value="'+esc(c.name)+'" placeholder="Tên nhà mạng" data-k="carriers" data-i="'+i+'" data-f="name" aria-label="Tên nhà mạng">'+
-    '<input type="text" class="mono" value="'+esc(c.prefixes)+'" placeholder="Đầu số: 096, 097" data-k="carriers" data-i="'+i+'" data-f="prefixes" aria-label="Đầu số">'+
-    delBtn("carriers",i,c.id?uc[c.id]||0:0)+'</div>').join("");
-  $("cfgCats").innerHTML=DRAFT.cats.map((k,i)=>
-    '<div class="cfgrow cat">'+
-    '<input type="text" value="'+esc(k.label)+'" placeholder="Tên loại số" data-k="cats" data-i="'+i+'" data-f="label" aria-label="Tên loại số">'+
-    delBtn("cats",i,k.id?uk[k.id]||0:0)+'</div>').join("");
+  const cv=$("lbCarrier").value, kv=$("lbCat").value;
+  $("lbCarrier").innerHTML=CARRIER_LIST.length ? CARRIER_LIST.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join("") : '<option value="" disabled>(chưa có nhà mạng)</option>';
+  $("lbCat").innerHTML=CAT_LIST.length ? CAT_LIST.map(k=>'<option value="'+esc(k.id)+'">'+esc(k.label)+'</option>').join("") : '<option value="" disabled>(chưa có loại số)</option>';
+  if(CARRIERS[cv]) $("lbCarrier").value=cv;
+  if(CATS[kv]) $("lbCat").value=kv;
 }
-function openCfg(){
-  DRAFT={
-    carriers:Object.entries(CARRIERS).map(([id,c])=>({id,name:c.name,color:c.color,prefixes:c.prefixes.join(", ")})),
-    cats:Object.entries(CATS).map(([id,label])=>({id,label}))
-  };
-  $("cfgMsg").textContent=""; $("cfgMsg").className="msg";
-  renderCfg(); openModal("ovCfg","cfgAddCarrier");
-}
+function openCfg(){ cfgMsg(""); renderCfg(); openModal("ovCfg","newCarrier"); }
 $("openCfg").addEventListener("click",openCfg);
 $("cfgClose").addEventListener("click",()=>closeModal("ovCfg"));
-$("ovCfg").addEventListener("input",e=>{
-  const t=e.target; if(!t.dataset.f) return;
-  DRAFT[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;
-});
-$("ovCfg").addEventListener("click",e=>{
-  const b=e.target.closest("[data-del]"); if(!b) return;
-  DRAFT[b.dataset.del==="cats"?"cats":"carriers"].splice(+b.dataset.i,1);
-  renderCfg();
-});
-$("cfgAddCarrier").addEventListener("click",()=>{
-  DRAFT.carriers.push({id:"",name:"",color:"#2563eb",prefixes:""}); renderCfg();
-  const r=$("cfgCarriers").querySelectorAll('input[data-f="name"]'); r[r.length-1].focus();
-});
-$("cfgAddCat").addEventListener("click",()=>{
-  DRAFT.cats.push({id:"",label:""}); renderCfg();
-  const r=$("cfgCats").querySelectorAll('input[data-f="label"]'); r[r.length-1].focus();
-});
 
-function uniqueId(name,taken){
-  const base=norm(name).slice(0,24) || ("m"+Date.now().toString(36));
-  let id=base, n=2;
-  while(taken.has(id)) id=base+(n++);
-  taken.add(id); return id;
-}
-$("cfgSave").addEventListener("click",async()=>{
-  const fail=m=>{ $("cfgMsg").className="msg err"; $("cfgMsg").textContent=m; };
-  if(!db||!auth.currentUser) return fail("Bạn cần đăng nhập lại.");
-  const takenC=new Set(DRAFT.carriers.map(c=>c.id).filter(Boolean));
-  const takenK=new Set(DRAFT.cats.map(k=>k.id).filter(Boolean));
-  const names=new Set(), owner={}, outC=[], outK=[];
-  for(const c of DRAFT.carriers){
-    const name=c.name.trim();
-    if(!name) return fail("Có nhà mạng chưa nhập tên. Điền tên hoặc bấm Xoá dòng đó.");
-    if(names.has(norm(name))) return fail("Tên nhà mạng bị trùng: "+name+".");
-    names.add(norm(name));
-    const pf=[...new Set(c.prefixes.split(/[\s,;]+/).filter(Boolean))];
-    for(const p of pf){
-      if(!/^0\d{2,5}$/.test(p)) return fail("Đầu số "+p+" chưa đúng. Ví dụ: 096, 0868.");
-      if(owner[p]) return fail("Đầu số "+p+" đang thuộc cả "+owner[p]+" và "+name+".");
-      owner[p]=name;
-    }
-    outC.push({id:c.id||uniqueId(name,takenC),name,color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:pf});
-  }
-  const knames=new Set();
-  for(const k of DRAFT.cats){
-    const label=k.label.trim();
-    if(!label) return fail("Có loại số chưa nhập tên. Điền tên hoặc bấm Xoá dòng đó.");
-    if(knames.has(norm(label))) return fail("Tên loại số bị trùng: "+label+".");
-    knames.add(norm(label));
-    outK.push({id:k.id||uniqueId(label,takenK),label});
-  }
-  if(!outC.length) return fail("Cần ít nhất một nhà mạng.");
-  if(!outK.length) return fail("Cần ít nhất một loại số.");
-  const btn=$("cfgSave"); btn.disabled=true; btn.textContent="Đang lưu…"; $("cfgMsg").textContent="";
+async function saveLists(carriers,categories){
+  if(!db||!auth.currentUser){ cfgMsg("Bạn cần đăng nhập lại.","err"); return false; }
   try{
-    await setDoc(doc(db,"config","lists"),{carriers:outC,categories:outK,updatedAt:serverTimestamp()});
-    closeModal("ovCfg"); setListMsg("Đã lưu cài đặt nhà mạng và loại số.","ok");
+    await setDoc(doc(db,"config","lists"),{carriers,categories,updatedAt:serverTimestamp()});
+    return true;
   }catch(err){
-    fail(err.code==="permission-denied" ? "Không có quyền ghi. Hãy cập nhật luật Firestore theo file firestore.rules mới." : "Lưu không thành công ("+(err.code||err.message)+").");
-  }finally{ btn.disabled=false; btn.textContent="Lưu cài đặt"; }
-});
+    cfgMsg(err.code==="permission-denied" ? "Không có quyền ghi. Hãy cập nhật luật Firestore theo file firestore.rules mới." : "Lưu không thành công ("+(err.code||err.message)+").","err");
+    return false;
+  }
+}
+function newId(name,list){
+  let base=norm(name).slice(0,24) || ("m"+Date.now().toString(36));
+  if(/^\d+$/.test(base)) base="n"+base;
+  let id=base, n=2;
+  while(list.some(x=>x.id===id)) id=base+(n++);
+  return id;
+}
+async function addItem(kind){
+  const input=$(kind==="carrier"?"newCarrier":"newCat"), name=input.value.trim().replace(/\s+/g," ");
+  if(!name){ cfgMsg("Nhập tên trước khi bấm Thêm.","err"); input.focus(); return; }
+  const list=kind==="carrier"?CARRIER_LIST:CAT_LIST, key=x=>norm(kind==="carrier"?x.name:x.label);
+  if(list.some(x=>key(x)===norm(name))){ cfgMsg("“"+name+"” đã có trong danh sách.","err"); return; }
+  const btn=$(kind==="carrier"?"addCarrier":"addCat"); btn.disabled=true; cfgMsg("");
+  const ok = kind==="carrier"
+    ? await saveLists([...CARRIER_LIST,{id:newId(name,CARRIER_LIST),name,color:PALETTE[CARRIER_LIST.length%PALETTE.length]}],CAT_LIST)
+    : await saveLists(CARRIER_LIST,[...CAT_LIST,{id:newId(name,CAT_LIST),label:name}]);
+  btn.disabled=false;
+  if(ok){ input.value=""; cfgMsg("Đã thêm “"+name+"”.","ok"); input.focus(); }
+}
+$("addCarrier").addEventListener("click",()=>addItem("carrier"));
+$("addCat").addEventListener("click",()=>addItem("cat"));
+$("newCarrier").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addItem("carrier"); } });
+$("newCat").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addItem("cat"); } });
+
+async function removeItem(kind){
+  const sel=$(kind==="carrier"?"lbCarrier":"lbCat"), id=sel.value, btn=$(kind==="carrier"?"delCarrier":"delCat");
+  if(!id){ cfgMsg("Chọn một mục trong danh sách trước khi xoá.","err"); return; }
+  const item=(kind==="carrier"?CARRIER_LIST:CAT_LIST).find(x=>x.id===id), name=item?(item.name||item.label):id;
+  const used=countBy(kind==="carrier"?"carrier":"category")[id]||0;
+  if(used){ cfgMsg("Chưa xoá được “"+name+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
+  if(!btn.classList.contains("arm")){            // bấm lần 1: xác nhận
+    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá “"+name+"”?");
+    setTimeout(()=>{ if(btn.isConnected){ btn.classList.remove("arm"); btn.textContent="Xoá"; } },3000);
+    return;
+  }
+  btn.classList.remove("arm"); btn.textContent="Xoá"; btn.disabled=true;
+  const ok = kind==="carrier" ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
+                              : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
+  btn.disabled=false;
+  if(ok) cfgMsg("Đã xoá “"+name+"”.","ok");
+}
+$("delCarrier").addEventListener("click",()=>removeItem("carrier"));
+$("delCat").addEventListener("click",()=>removeItem("cat"));
 </script>
 </body>
 </html>

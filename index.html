@@ -191,7 +191,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
 <section class="hero">
   <div class="wrap">
     <div>
-      <div class="kicker">Sim số đẹp · Đủ 5 nhà mạng</div>
+      <div class="kicker">Sim số đẹp · Nhiều nhà mạng</div>
       <h1>Gõ vài số bạn thích, <em>chọn đúng SIM</em> trong kho.</h1>
       <p class="lead">Tìm theo đuôi, đầu số hoặc dạng số như tứ quý, thần tài, lộc phát. Xem giá và nhà mạng ngay trên từng ô số.</p>
       <form class="searchbox" id="heroForm" role="search" autocomplete="off">
@@ -275,7 +275,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
 <section class="block" id="nha-mang">
   <div class="wrap">
     <h2>Chọn theo nhà mạng</h2>
-    <p class="sub">Đầu số cho biết số thuộc nhà mạng nào. Bấm vào để lọc kho số theo nhà mạng đó.</p>
+    <p class="sub">Bấm vào một nhà mạng để lọc kho số theo nhà mạng đó.</p>
     <div class="carriers" id="carriers"></div>
   </div>
 </section>
@@ -331,19 +331,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
 <script>
 (function(){
   /* ---------- data ---------- */
-  var CARRIERS = {
-    viettel:{name:"Viettel",color:"#e11d2e",prefixes:["096","097","098","086","032","033","034","035","036","037","038","039"]},
-    vina:{name:"VinaPhone",color:"#1f7ae0",prefixes:["091","094","088","081","082","083","084","085"]},
-    mobi:{name:"MobiFone",color:"#0aa37f",prefixes:["090","093","089","070","076","077","078","079"]},
-    vnmb:{name:"Vietnamobile",color:"#f59e0b",prefixes:["092","056","058"]},
-    gmb:{name:"Gmobile",color:"#8b5cf6",prefixes:["099","059"]}
-  };
-  var CATS = [
-    {id:"nguquy",label:"Ngũ quý"},{id:"tuquy",label:"Tứ quý"},{id:"tamhoa",label:"Tam hoa"},
-    {id:"sanh",label:"Số tiến"},{id:"thantai",label:"Thần Tài"},{id:"ongdia",label:"Ông Địa"},
-    {id:"locphat",label:"Lộc Phát"},{id:"ganh",label:"Gánh đảo"},{id:"lap",label:"Lặp đôi"},{id:"thuong",label:"Số thường"}
-  ];
-  var CATLABEL = {}; CATS.forEach(function(c){CATLABEL[c.id]=c.label;});
+  var CARRIERS = {};   // lấy từ Firestore (config/lists)
+  var CATS = [];
+  var CATLABEL = {};
 
   function nut(n){var s=0;for(var i=0;i<n.length;i++)s+=+n[i];var r=s%10;return r===0?10:r;}
 
@@ -366,31 +356,31 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
     return b;
   }
   var fC=$("fCarrier"), fK=$("fCat");
+  function countBy(f){ var m={}; STOCK.forEach(function(s){ m[s[f]]=(m[s[f]]||0)+1; }); return m; }
   function buildFilters(){
+    var nc=countBy("carrier"), nk=countBy("cat");
+    if(S.carrier!=="all"&&!nc[S.carrier]) S.carrier="all";
+    if(S.cat!=="all"&&!nk[S.cat]) S.cat="all";
     fC.innerHTML='<span class="flabel">Nhà mạng</span>'; fK.innerHTML='<span class="flabel">Loại số</span>';
     fC.appendChild(chip("Tất cả","carrier","all"));
-    Object.keys(CARRIERS).forEach(function(id){fC.appendChild(chip(CARRIERS[id].name,"carrier",id,CARRIERS[id].color));});
+    Object.keys(CARRIERS).forEach(function(id){ if(nc[id]) fC.appendChild(chip(CARRIERS[id].name,"carrier",id,CARRIERS[id].color)); });
     fK.appendChild(chip("Tất cả","cat","all"));
-    CATS.forEach(function(c){fK.appendChild(chip(c.label,"cat",c.id));});
-    $("carriers").innerHTML=Object.keys(CARRIERS).map(function(id){
+    CATS.forEach(function(c){ if(nk[c.id]) fK.appendChild(chip(c.label,"cat",c.id)); });
+    $("carriers").innerHTML=Object.keys(CARRIERS).filter(function(id){return nc[id];}).map(function(id){
       var c=CARRIERS[id];
-      return '<div class="cr" style="--c:'+c.color+'"><h3>'+esc(c.name)+'</h3><div class="pf">'+c.prefixes.map(esc).join(" · ")+'</div><button type="button" data-go="'+id+'">Xem số '+esc(c.name)+' →</button></div>';
+      return '<div class="cr" style="--c:'+c.color+'"><h3>'+esc(c.name)+'</h3><div class="pf">'+nc[id].toLocaleString("vi-VN")+' số trong kho</div><button type="button" data-go="'+esc(id)+'">Xem số '+esc(c.name)+' →</button></div>';
     }).join("");
     syncChips();
   }
   function applyConfig(cfg){
-    if(!cfg||!Array.isArray(cfg.carriers)||!Array.isArray(cfg.categories)) return;
-    var cs={}, ks=[];
-    cfg.carriers.forEach(function(c){
-      if(c&&/^[a-z0-9]{1,30}$/.test(c.id)&&c.name) cs[c.id]={name:String(c.name),color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b",prefixes:Array.isArray(c.prefixes)?c.prefixes.map(String):[]};
+    CARRIERS={}; CATS=[];
+    if(cfg&&Array.isArray(cfg.carriers)) cfg.carriers.forEach(function(c){
+      if(c&&/^[a-z0-9]{1,30}$/.test(c.id)&&c.name) CARRIERS[c.id]={name:String(c.name),color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:"#64748b"};
     });
-    cfg.categories.forEach(function(k){ if(k&&/^[a-z0-9]{1,30}$/.test(k.id)&&k.label) ks.push({id:k.id,label:String(k.label)}); });
-    if(Object.keys(cs).length) CARRIERS=cs;
-    if(ks.length) CATS=ks;
+    if(cfg&&Array.isArray(cfg.categories)) cfg.categories.forEach(function(k){
+      if(k&&/^[a-z0-9]{1,30}$/.test(k.id)&&k.label) CATS.push({id:k.id,label:String(k.label)});
+    });
     CATLABEL={}; CATS.forEach(function(c){CATLABEL[c.id]=c.label;});
-    if(!CARRIERS[S.carrier]) S.carrier="all";
-    if(!CATLABEL[S.cat]) S.cat="all";
-    buildFilters();
   }
 
   function syncChips(){
@@ -514,9 +504,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
   var COLLECTION="sims", CACHE_KEY="sims_cache_v1", CACHE_MS=60000;
   function showStatus(html){ $("grid").innerHTML='<div class="empty">'+html+'</div>'; $("pager").innerHTML=""; $("count").textContent=""; }
   function setStock(rows){
-    STOCK=rows.filter(function(r){return r&&/^0\d{9}$/.test(r.number)&&CARRIERS[r.carrier];}).map(function(r,i){
-      return {num:r.number,carrier:r.carrier,cat:r.category||"thuong",price:+r.price||0,nut:nut(r.number),rank:Math.random()};
+    STOCK=rows.filter(function(r){return r&&/^0\d{9}$/.test(r.number)&&r.carrier;}).map(function(r){
+      if(!CARRIERS[r.carrier]) CARRIERS[r.carrier]={name:String(r.carrier),color:"#64748b"};
+      var cat=r.category||"";
+      if(cat&&!CATLABEL[cat]){ CATLABEL[cat]=String(cat); CATS.push({id:cat,label:String(cat)}); }
+      return {num:r.number,carrier:r.carrier,cat:cat,price:+r.price||0,nut:nut(r.number),rank:Math.random()};
     });
+    buildFilters();
     render();
     if(!STOCK.length) showStatus("<b>Kho đang trống.</b><br>Hãy thêm số ở trang quản trị.");
   }
