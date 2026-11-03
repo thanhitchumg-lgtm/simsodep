@@ -97,6 +97,38 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 .del:hover{border-color:var(--bad);color:var(--bad)}
 .del.arm{background:var(--bad);border-color:var(--bad);color:#fff}
 .empty{padding:26px 10px;color:var(--muted);text-align:center}
+
+.sr{position:absolute;left:-9999px}
+.chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.chead h2{margin:0}
+.cnt{font-size:13px;color:var(--muted)}
+.btn.sm{padding:8px 14px;font-size:14px}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.danger:disabled{opacity:.4}
+.ltools{display:flex;gap:10px;align-items:stretch;margin-bottom:6px}
+.ltools .field input{height:100%}
+.pager{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:12px;font-size:13px;color:var(--muted)}
+.pages{display:flex;gap:4px;flex-wrap:wrap}
+.pages button{min-width:34px;height:34px;border:1.5px solid var(--line);background:var(--card);border-radius:8px;cursor:pointer;font-weight:600}
+.pages button:hover:not(:disabled){border-color:var(--ink)}
+.pages button[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pages button:disabled{opacity:.4;cursor:default}
+.pages span{display:grid;place-items:center;min-width:18px}
+.ov{position:fixed;inset:0;z-index:50;background:rgba(8,14,20,.6);display:flex;align-items:flex-start;justify-content:center;padding:20px 14px;overflow:auto}
+.modal{background:var(--card);border-radius:18px;max-width:640px;width:100%;padding:22px;margin:auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.modal.small{max-width:440px}
+.modal h2{font-size:21px;margin-bottom:8px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 10px}
+pre.eg{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px;overflow-x:auto}
+.frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:14px}
+textarea{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:13px;resize:vertical;min-height:130px}
+textarea:focus-visible{outline:none;border-color:var(--accent)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:10px 0}
+.chk input{margin-top:4px}
+.sum{font-size:14px;font-weight:600;min-height:20px}
+.errlist{max-height:130px;overflow:auto;font-size:13px;color:var(--bad);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:8px}
+.errlist div{padding:1px 0}
+.mrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -130,7 +162,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
 
   <div class="wrap">
     <section class="card" aria-labelledby="addTitle">
-      <h2 id="addTitle">Thêm số vào kho</h2>
+      <div class="chead"><h2 id="addTitle">Thêm số vào kho</h2><button class="btn ghost sm" id="openBulk" type="button">Thêm nhanh</button></div>
       <form id="addForm" novalidate autocomplete="off">
         <div class="field">
           <label for="phone">Số điện thoại</label>
@@ -169,14 +201,62 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
     </section>
 
     <section class="card" aria-labelledby="listTitle">
-      <div class="lhead"><h2 id="listTitle">Vừa thêm gần đây</h2><span id="listCount"></span></div>
+      <div class="chead"><h2 id="listTitle">Danh sách toàn bộ sim số</h2><span class="cnt" id="listCount"></span></div>
+      <div class="ltools">
+        <div class="field" style="margin:0;flex:1;min-width:0">
+          <label for="ls" class="sr">Tìm số trong kho</label>
+          <input id="ls" class="mono" type="search" inputmode="search" placeholder="Tìm số: 0988, 8888, 098*868" autocomplete="off">
+        </div>
+        <button class="btn danger sm" id="delAll" type="button" disabled>Xoá toàn bộ</button>
+      </div>
+      <div class="msg" id="listMsg" role="status"></div>
       <div class="tw">
         <table>
           <thead><tr><th>Số</th><th>Nhà mạng</th><th>Loại</th><th class="r">Giá</th><th></th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
+      <div class="pager" id="pager"></div>
     </section>
+  </div>
+</div>
+
+
+<!-- Thêm nhanh -->
+<div class="ov" id="ovBulk" hidden role="dialog" aria-modal="true" aria-labelledby="bulkTitle">
+  <div class="modal">
+    <h2 id="bulkTitle">Thêm nhanh nhiều số</h2>
+    <p class="sub">Mỗi dòng một số, theo thứ tự <b>Số sim, Nhà mạng, Loại số, Giá</b>. Ngăn cách bằng dấu phẩy, dấu ;, dấu |, tab hoặc khoảng trắng. Giá viết liền hoặc dùng dấu chấm (1.500.000), cũng nhận 1500k hoặc 1.5tr.</p>
+<pre class="eg">0988168868, Viettel, Lộc Phát, 3.500.000
+0912 562 886 VinaPhone Số thường 1.290.000
+0333529191 ; Viettel ; ; 590000</pre>
+    <p class="sub">Để trống nhà mạng hoặc loại số thì trang tự nhận diện từ đầu số và đuôi số.</p>
+    <div class="frow">
+      <input id="bulkFile" type="file" accept=".txt,.csv,text/plain" aria-label="Chọn file txt">
+      <button class="btn ghost sm" id="bulkSample" type="button">Tải file mẫu</button>
+    </div>
+    <label class="sr" for="bulkText">Nội dung danh sách số</label>
+    <textarea id="bulkText" rows="8" spellcheck="false" placeholder="Dán danh sách vào đây hoặc chọn file .txt ở trên"></textarea>
+    <label class="chk"><input type="checkbox" id="bulkOver"> Ghi đè giá và loại nếu số đã có trong kho (mặc định bỏ qua số đã có)</label>
+    <div class="sum" id="bulkSum" role="status"></div>
+    <div class="errlist" id="bulkErr" hidden></div>
+    <div class="mrow">
+      <button class="btn" id="bulkGo" type="button" disabled>Nhập vào kho</button>
+      <button class="btn ghost" id="bulkClose" type="button">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Xác nhận xoá toàn bộ -->
+<div class="ov" id="ovDel" hidden role="alertdialog" aria-modal="true" aria-labelledby="delTitle" aria-describedby="delText">
+  <div class="modal small">
+    <h2 id="delTitle">Xoá toàn bộ kho số?</h2>
+    <p id="delText" class="sub" style="margin:8px 0 16px"></p>
+    <div class="msg" id="delMsg" role="status"></div>
+    <div class="mrow">
+      <button class="btn ghost" id="delNo" type="button">Không, giữ lại</button>
+      <button class="btn danger" id="delYes" type="button">Có, xoá toàn bộ</button>
+    </div>
   </div>
 </div>
 
@@ -187,20 +267,20 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right
    Các giá trị này không phải mật khẩu. Bảo mật nằm ở Authentication
    và luật Firestore (xem file firestore.rules).
    ====================================================================== */
-  const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyDF7q9Lk_NXdDJYhS5QU0gJtbH8Zq10sGk",
     authDomain: "simsodep-4ad4d.firebaseapp.com",
     projectId: "simsodep-4ad4d",
     storageBucket: "simsodep-4ad4d.firebasestorage.app",
     messagingSenderId: "144535496573",
     appId: "1:144535496573:web:3d3b03bc4b419cf1f78e14"
-  };
+};
 const COLLECTION = "sims";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, orderBy, limit, onSnapshot, serverTimestamp }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
@@ -283,7 +363,7 @@ if(auth){
     $("viewLogin").hidden=!!user;
     $("viewApp").hidden=!user;
     if(user){ $("who").textContent=user.email; startList(); setTimeout(()=>$("phone").focus(),50); }
-    else { if(unsub){unsub();unsub=null;} $("rows").innerHTML=""; }
+    else { if(unsub){unsub();unsub=null;} resetList(); }
   });
 }
 
@@ -357,27 +437,75 @@ $("addForm").addEventListener("submit", async e=>{
 });
 
 /* ======================================================================
-   4. DANH SÁCH VỪA THÊM + XOÁ
+   4. DANH SÁCH TOÀN BỘ, TÌM KIẾM, PHÂN TRANG, XOÁ
    ====================================================================== */
+const PER=10;
+let ALL=[], PAGE=1, QUERY="";
+const tsOf = s => s.createdAt && s.createdAt.toMillis ? s.createdAt.toMillis() : Date.now(); // chưa có giờ máy chủ = vừa thêm
+function setListMsg(t,type){ const m=$("listMsg"); m.textContent=t; m.className="msg"+(type?" "+type:""); }
+
+function resetList(){ ALL=[]; PAGE=1; QUERY=""; $("ls").value=""; $("rows").innerHTML=""; $("pager").innerHTML=""; $("listCount").textContent=""; }
+
 function startList(){
   if(unsub||!db) return;
-  const q=query(collection(db,COLLECTION),orderBy("createdAt","desc"),limit(30));
-  unsub=onSnapshot(q,snap=>{
-    $("listCount").textContent = snap.size ? "30 số mới nhất" : "";
-    $("rows").innerHTML = snap.empty
-      ? '<tr><td colspan="5" class="empty">Kho đang trống. Thêm số đầu tiên ở bên trái.</td></tr>'
-      : snap.docs.map(d=>{
-          const s=d.data(), c=CARRIERS[s.carrier]||{name:s.carrier,color:"var(--line)"};
-          return '<tr><td class="mono">'+esc(fmtNum(s.number||d.id))+'</td>'+
-            '<td><span class="dot" style="background:'+c.color+'"></span>'+esc(c.name)+'</td>'+
-            '<td>'+esc(CATS[s.category]||s.category||"")+'</td>'+
-            '<td class="r mono">'+esc(fmtVnd(s.price||0))+'</td>'+
-            '<td class="r"><button class="del" type="button" data-id="'+esc(d.id)+'">Xoá</button></td></tr>';
-        }).join("");
+  unsub=onSnapshot(collection(db,COLLECTION),snap=>{
+    ALL=snap.docs.map(d=>({id:d.id,...d.data()}));
+    ALL.sort((a,b)=>tsOf(b)-tsOf(a)||(a.id<b.id?-1:1));
+    renderList();
   },err=>{
     $("rows").innerHTML='<tr><td colspan="5" class="empty">Không đọc được danh sách ('+esc(err.code||err.message)+').</td></tr>';
   });
 }
+
+function matcher(q){
+  q=q.replace(/[\s.\-]/g,"");
+  if(!q) return null;
+  if(q.includes("*")){
+    const re=new RegExp("^"+q.replace(/[^0-9*]/g,"").replace(/\*+/g,".*")+"$");
+    return n=>re.test(n);
+  }
+  q=q.replace(/\D/g,"");
+  return q ? (n=>n.includes(q)) : null;
+}
+
+function pagerHtml(total,pages){
+  const from=total?(PAGE-1)*PER+1:0, to=Math.min(total,PAGE*PER);
+  const set=new Set([1,pages,PAGE-1,PAGE,PAGE+1].filter(p=>p>=1&&p<=pages));
+  let h="",prev=0;
+  [...set].sort((a,b)=>a-b).forEach(p=>{
+    if(prev&&p-prev>1) h+="<span>…</span>";
+    h+='<button type="button" data-page="'+p+'"'+(p===PAGE?' aria-current="page"':"")+'>'+p+'</button>'; prev=p;
+  });
+  return '<div>'+from.toLocaleString("vi-VN")+'–'+to.toLocaleString("vi-VN")+' / '+total.toLocaleString("vi-VN")+'</div>'+
+    '<div class="pages"><button type="button" data-page="'+(PAGE-1)+'"'+(PAGE<=1?" disabled":"")+' aria-label="Trang trước">‹</button>'+h+
+    '<button type="button" data-page="'+(PAGE+1)+'"'+(PAGE>=pages?" disabled":"")+' aria-label="Trang sau">›</button></div>';
+}
+
+function renderList(){
+  const m=matcher(QUERY);
+  const list=m ? ALL.filter(s=>m(s.number||s.id)) : ALL;
+  const pages=Math.max(1,Math.ceil(list.length/PER));
+  if(PAGE>pages) PAGE=pages;
+  const view=list.slice((PAGE-1)*PER,PAGE*PER);
+  $("listCount").textContent = m ? list.length.toLocaleString("vi-VN")+" kết quả / "+ALL.length.toLocaleString("vi-VN")+" số"
+                                 : ALL.length.toLocaleString("vi-VN")+" số";
+  $("delAll").disabled = ALL.length===0;
+  $("rows").innerHTML = view.length ? view.map(s=>{
+    const c=CARRIERS[s.carrier]||{name:s.carrier||"",color:"var(--line)"};
+    return '<tr><td class="mono">'+esc(fmtNum(s.number||s.id))+'</td>'+
+      '<td><span class="dot" style="background:'+c.color+'"></span>'+esc(c.name)+'</td>'+
+      '<td>'+esc(CATS[s.category]||s.category||"")+'</td>'+
+      '<td class="r mono">'+esc(fmtVnd(s.price||0))+'</td>'+
+      '<td class="r"><button class="del" type="button" data-id="'+esc(s.id)+'">Xoá</button></td></tr>';
+  }).join("") : '<tr><td colspan="5" class="empty">'+(ALL.length?"Không có số nào khớp.":"Kho đang trống. Thêm số đầu tiên ở bên trái.")+'</td></tr>';
+  $("pager").innerHTML = list.length ? pagerHtml(list.length,pages) : "";
+}
+
+$("ls").addEventListener("input",()=>{ QUERY=$("ls").value; PAGE=1; renderList(); });
+$("pager").addEventListener("click",e=>{
+  const b=e.target.closest("[data-page]"); if(!b||b.disabled) return;
+  PAGE=+b.dataset.page; renderList();
+});
 $("rows").addEventListener("click",async e=>{
   const b=e.target.closest(".del"); if(!b) return;
   if(!b.classList.contains("arm")){            // bấm lần 1: xác nhận
@@ -386,8 +514,169 @@ $("rows").addEventListener("click",async e=>{
     return;
   }
   b.disabled=true;
-  try{ await deleteDoc(doc(db,COLLECTION,b.dataset.id)); }
-  catch(err){ b.disabled=false; setMsg("Xoá không thành công ("+(err.code||err.message)+").","err"); }
+  try{ await deleteDoc(doc(db,COLLECTION,b.dataset.id)); setListMsg("Đã xoá "+fmtNum(b.dataset.id)+".","ok"); }
+  catch(err){ b.disabled=false; setListMsg("Xoá không thành công ("+(err.code||err.message)+").","err"); }
+});
+
+/* ---------- tiện ích hộp thoại ---------- */
+let modalBusy=false;
+function openModal(id,focusId){ $(id).hidden=false; document.body.style.overflow="hidden"; setTimeout(()=>$(focusId).focus(),30); }
+function closeModal(id){ if(modalBusy) return; $(id).hidden=true; document.body.style.overflow=""; }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal("ovBulk"); closeModal("ovDel"); } });
+["ovBulk","ovDel"].forEach(id=>$(id).addEventListener("mousedown",e=>{ if(e.target===$(id)) closeModal(id); }));
+
+async function commitChunks(items, apply, onProgress){   // items → writeBatch, mỗi mẻ 400 thao tác
+  for(let i=0;i<items.length;i+=400){
+    const batch=writeBatch(db);
+    items.slice(i,i+400).forEach(it=>apply(batch,it));
+    await batch.commit();
+    onProgress(Math.min(i+400,items.length));
+  }
+}
+
+/* ======================================================================
+   5. THÊM NHANH TỪ FILE TXT
+   ====================================================================== */
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"");
+const byLen = arr => arr.sort((a,b)=>b[0].length-a[0].length);
+const CARRIER_ALIAS = byLen(Object.entries({
+  viettel:["viettel","vt"], vina:["vinaphone","vina","vnp"], mobi:["mobifone","mobi"],
+  vnmb:["vietnamobile","vnmb","vnm"], gmb:["gmobile","gmb","gtel"]
+}).flatMap(([id,l])=>l.map(a=>[a,id])));
+const CAT_ALIAS = new Map(Object.entries({
+  nguquy:["nguquy","5quy"], tuquy:["tuquy","4quy"], tamhoa:["tamhoa","3hoa"], sanh:["sotien","sanhtien","sanh"],
+  thantai:["thantai"], ongdia:["ongdia"], locphat:["locphat"], ganh:["ganhdao","ganh"],
+  lap:["lapdoi","lap"], thuong:["sothuong","thuong"]
+}).flatMap(([id,l])=>l.map(a=>[a,id])));
+
+function parsePrice(raw){
+  const x=String(raw).toLowerCase().replace(/\s+/g,"").replace(/(vnd|vnđ|đ)$/,"");
+  const m=x.match(/^([\d.,]+)(k|tr|triệu|trieu|m)?$/);
+  if(!m) return NaN;
+  if(m[2]) return Math.round(parseFloat(m[1].replace(",","."))*(m[2]==="k"?1e3:1e6));
+  return Number(m[1].replace(/[.,]/g,""));
+}
+const DELIM=/\s*(?:[;\t|]|,(?!\d{3}(?:\D|$)))\s*/;
+
+function parseLine(line){
+  let num, priceRaw, mid;
+  if(DELIM.test(line)){
+    const f=line.split(DELIM).map(x=>x.trim());
+    if(f.length<2) return {err:"Thiếu giá"};
+    num=digits(f[0]); priceRaw=f[f.length-1]; mid=f.slice(1,-1).join("");
+  }else{
+    const t=line.trim().split(/\s+/); let i=0, d="";
+    while(i<t.length && /^\d+$/.test(t[i]) && d.length<10){ d+=t[i]; i++; }
+    num=d;
+    if(t.length-i<1) return {err:"Thiếu giá"};
+    priceRaw=t[t.length-1]; mid=t.slice(i,-1).join("");
+  }
+  if(!/^0\d{9}$/.test(num)) return {err:"Số điện thoại phải đủ 10 chữ số và bắt đầu bằng 0"};
+  const price=parsePrice(priceRaw);
+  if(!Number.isFinite(price)||price<1000||price>1e9) return {err:"Giá không hợp lệ ("+priceRaw+")"};
+  let m=norm(mid), carrier="", cat="";
+  const hit=CARRIER_ALIAS.find(([a])=>m.startsWith(a));
+  if(hit){ carrier=hit[1]; m=m.slice(hit[0].length); }
+  if(m && m!=="auto" && m!=="tunhandien"){
+    cat=CAT_ALIAS.get(m)||"";
+    if(!cat) return {err:"Không nhận ra nhà mạng hoặc loại số: "+mid};
+  }
+  if(!carrier) carrier=carrierOf(num);
+  if(!carrier) return {err:"Không nhận ra nhà mạng từ đầu số "+num.slice(0,3)+", hãy ghi rõ nhà mạng"};
+  if(!cat) cat=classify(num);
+  return {ok:{number:num,carrier,category:cat,price}};
+}
+
+let BULK=[];            // các số hợp lệ sẽ nhập
+function analyzeBulk(){
+  const lines=$("bulkText").value.split(/\r?\n/);
+  const ok=[], bad=[], seen=new Set(); let dup=0, skip=0, over=0;
+  const have=new Set(ALL.map(s=>s.id)), overwrite=$("bulkOver").checked;
+  let total=0;
+  lines.forEach((raw,i)=>{
+    const line=raw.trim();
+    if(!line||line.startsWith("#")||line.startsWith("//")) return;
+    total++;
+    const r=parseLine(line);
+    if(r.err){ bad.push("Dòng "+(i+1)+": "+r.err); return; }
+    const n=r.ok.number;
+    if(seen.has(n)){ dup++; return; }
+    seen.add(n);
+    if(have.has(n)){ if(!overwrite){ skip++; return; } over++; }
+    ok.push(r.ok);
+  });
+  BULK=ok;
+  const parts=[total+" dòng", ok.length+" số sẽ nhập"];
+  if(over) parts.push(over+" ghi đè");
+  if(skip) parts.push(skip+" đã có trong kho (bỏ qua)");
+  if(dup) parts.push(dup+" trùng trong file");
+  if(bad.length) parts.push(bad.length+" dòng lỗi");
+  $("bulkSum").textContent = total ? parts.join(" · ") : "";
+  const el=$("bulkErr");
+  el.hidden=!bad.length;
+  el.innerHTML=bad.slice(0,100).map(x=>"<div>"+esc(x)+"</div>").join("")+(bad.length>100?"<div>… và "+(bad.length-100)+" dòng lỗi khác</div>":"");
+  $("bulkGo").disabled = !ok.length;
+  $("bulkGo").textContent = ok.length ? "Nhập "+ok.length.toLocaleString("vi-VN")+" số vào kho" : "Nhập vào kho";
+}
+
+$("openBulk").addEventListener("click",()=>{ $("bulkSum").className="sum"; analyzeBulk(); openModal("ovBulk","bulkText"); });
+$("bulkClose").addEventListener("click",()=>closeModal("ovBulk"));
+$("bulkText").addEventListener("input",analyzeBulk);
+$("bulkOver").addEventListener("change",analyzeBulk);
+$("bulkFile").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(f.size>5*1024*1024){ $("bulkSum").textContent="File quá lớn (tối đa 5 MB)."; return; }
+  $("bulkText").value=await f.text();
+  e.target.value="";
+  analyzeBulk();
+});
+$("bulkSample").addEventListener("click",()=>{
+  const txt="0988168868, Viettel, Lộc Phát, 3.500.000\n0912 562 886 VinaPhone Số thường 1.290.000\n0333529191 ; Viettel ; ; 590000\n0789 123 456 MobiFone Số tiến 1.5tr\n";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"}));
+  a.download="mau-them-nhanh.txt"; document.body.appendChild(a); a.click(); a.remove();
+});
+$("bulkGo").addEventListener("click",async()=>{
+  if(!db||!auth.currentUser||!BULK.length) return;
+  const items=BULK.slice(), user=auth.currentUser.email, btn=$("bulkGo");
+  modalBusy=true; btn.disabled=true; $("bulkClose").disabled=true; $("bulkText").disabled=true;
+  try{
+    await commitChunks(items,(b,it)=>b.set(doc(db,COLLECTION,it.number),{...it,createdAt:serverTimestamp(),createdBy:user}),
+      n=>{ $("bulkSum").textContent="Đang nhập "+n.toLocaleString("vi-VN")+" / "+items.length.toLocaleString("vi-VN")+"…"; });
+    modalBusy=false; $("bulkText").value=""; $("bulkText").disabled=false; $("bulkClose").disabled=false;
+    analyzeBulk(); closeModal("ovBulk");
+    setListMsg("Đã nhập "+items.length.toLocaleString("vi-VN")+" số vào kho.","ok");
+  }catch(err){
+    modalBusy=false; $("bulkText").disabled=false; $("bulkClose").disabled=false; btn.disabled=false;
+    $("bulkSum").textContent="Nhập không thành công ("+(err.code||err.message)+"). Một số mẻ trước đó có thể đã được lưu, hãy kiểm tra danh sách.";
+  }
+});
+
+/* ======================================================================
+   6. XOÁ TOÀN BỘ (có hỏi lại)
+   ====================================================================== */
+$("delAll").addEventListener("click",()=>{
+  if(!ALL.length) return;
+  $("delText").textContent="Toàn bộ "+ALL.length.toLocaleString("vi-VN")+" số trong kho sẽ bị xoá khỏi cơ sở dữ liệu và biến mất khỏi trang bán. Việc này không thể hoàn tác.";
+  $("delMsg").textContent=""; $("delMsg").className="msg";
+  $("delYes").disabled=false; $("delNo").disabled=false;
+  openModal("ovDel","delNo");                  // mặc định đặt con trỏ ở nút "Không" cho an toàn
+});
+$("delNo").addEventListener("click",()=>closeModal("ovDel"));
+$("delYes").addEventListener("click",async()=>{
+  if(!db||!auth.currentUser) return;
+  const ids=ALL.map(s=>s.id);
+  modalBusy=true; $("delYes").disabled=true; $("delNo").disabled=true;
+  try{
+    await commitChunks(ids,(b,id)=>b.delete(doc(db,COLLECTION,id)),
+      n=>{ $("delMsg").textContent="Đã xoá "+n.toLocaleString("vi-VN")+" / "+ids.length.toLocaleString("vi-VN")+"…"; });
+    modalBusy=false; closeModal("ovDel");
+    setListMsg("Đã xoá toàn bộ "+ids.length.toLocaleString("vi-VN")+" số.","ok");
+  }catch(err){
+    modalBusy=false; $("delNo").disabled=false; $("delYes").disabled=false;
+    $("delMsg").className="msg err";
+    $("delMsg").textContent="Xoá không thành công ("+(err.code||err.message)+"). Một số số có thể đã bị xoá.";
+  }
 });
 </script>
 </body>
