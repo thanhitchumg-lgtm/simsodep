@@ -44,6 +44,8 @@ button,input,select{font:inherit;color:inherit}
 .login{min-height:100vh;display:grid;place-items:center;padding:20px}
 .box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
 .box h1{font-size:22px;margin:18px 0 4px}
+.back{display:block;text-align:center;margin-top:16px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--accent)}
 .box p.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
 
 /* shared form */
@@ -157,6 +159,7 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
       <div class="msg err" id="loginMsg" role="alert"></div>
       <button class="btn block" id="loginBtn" type="submit">Đăng nhập</button>
     </form>
+    <a class="back" href="index.html">← Về trang chủ</a>
   </div>
 </main>
 
