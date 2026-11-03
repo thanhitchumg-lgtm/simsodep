@@ -265,7 +265,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
       <div class="results">
         <div class="grid" id="grid"></div>
     <div class="pager" id="pager"></div>
-    <p class="note">Số nút là tổng các chữ số của 10 số, lấy phần dư khi chia cho 10 (dư 0 tính là 10 nút). Danh sách và giá trên trang là dữ liệu mẫu, thay bằng kho số thật của bạn.</p>
+    <p class="note">Số nút là tổng các chữ số của 10 số, lấy phần dư khi chia cho 10 (dư 0 tính là 10 nút).</p>
   
       </div>
     </div>
@@ -345,65 +345,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
   ];
   var CATLABEL = {}; CATS.forEach(function(c){CATLABEL[c.id]=c.label;});
 
-  function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-  var R = rng(20261103);
-  function ri(n){return Math.floor(R()*n);}
-  function pick(a){return a[ri(a.length)];}
-  function digits(n){var s="";for(var i=0;i<n;i++)s+=ri(10);return s;}
-
-  var SUFFIX = {
-    nguquy:function(){return pick(["6","8","9","1","2","3","5"]).repeat(5);},
-    tuquy:function(){return pick(["6","8","9","1","2","3","5","7"]).repeat(4);},
-    tamhoa:function(){return pick(["6","8","9","1","2","3","5","7"]).repeat(3);},
-    thantai:function(){return digits(2)+pick(["39","79"]);},
-    ongdia:function(){return digits(2)+pick(["38","78"]);},
-    locphat:function(){return digits(2)+pick(["68","86","668","886","6868","8686"]);},
-    sanh:function(){return pick(["123","234","345","456","567","678","789","1234","2345","3456","4567","5678","6789"]);},
-    ganh:function(){var a=ri(10),b=ri(10);while(b===a)b=ri(10);return ""+a+b+b+a;},
-    lap:function(){var a=ri(10),b=ri(10);while(b===a)b=ri(10);return ""+a+b+a+b;},
-    thuong:function(){return digits(4);}
-  };
-  var SCALE=14;
-  var PER = {nguquy:1,tuquy:3,tamhoa:5,thantai:4,ongdia:3,locphat:5,sanh:4,ganh:4,lap:3,thuong:12};
-
-  function classify(n){
-    var t5=n.slice(-5),t4=n.slice(-4),t3=n.slice(-3),t2=n.slice(-2);
-    if(/^(\d)\1{4}$/.test(t5))return "nguquy";
-    if(/^(\d)\1{3}$/.test(t4))return "tuquy";
-    if(/^(\d)\1{2}$/.test(t3))return "tamhoa";
-    if("0123456789".indexOf(t3)>-1||"0123456789".indexOf(t4)>-1)return "sanh";
-    if(t2==="39"||t2==="79")return "thantai";
-    if(t2==="38"||t2==="78")return "ongdia";
-    if(t2==="68"||t2==="86")return "locphat";
-    if(/^(\d)(\d)\2\1$/.test(t4))return "ganh";
-    if(/^(\d)(\d)\1\2$/.test(t4))return "lap";
-    return "thuong";
-  }
-  var RANGE = {nguquy:[25e6,70e6],tuquy:[3e6,15e6],tamhoa:[8e5,3e6],sanh:[1e6,4e6],thantai:[9e5,2.5e6],ongdia:[7e5,2e6],locphat:[1e6,3e6],ganh:[5e5,15e5],lap:[4e5,1e6],thuong:[15e4,45e4]};
-  var CAR_MUL = {viettel:1.15,vina:1,mobi:1,vnmb:.8,gmb:.7};
-
   function nut(n){var s=0;for(var i=0;i<n.length;i++)s+=+n[i];var r=s%10;return r===0?10:r;}
 
-  var STOCK=[], seen={};
-  Object.keys(CARRIERS).forEach(function(cid){
-    var c=CARRIERS[cid];
-    CATS.forEach(function(cat){
-      for(var k=0;k<PER[cat.id]*SCALE;k++){
-        var tries=0,num;
-        do{
-          var suf=SUFFIX[cat.id](), pre=pick(c.prefixes);
-          num=pre+digits(Math.max(0,7-suf.length))+suf;
-          num=num.slice(0,10);
-          tries++;
-        }while((seen[num]||(cat.id==="thuong"&&classify(num)!=="thuong"))&&tries<30);
-        if(seen[num])continue;
-        seen[num]=1;
-        var cl=classify(num), rg=RANGE[cl];
-        var price=Math.round((rg[0]+R()*(rg[1]-rg[0]))*CAR_MUL[cid]/1e4)*1e4;
-        STOCK.push({num:num,carrier:cid,cat:cl,price:price,nut:nut(num),rank:R()});
-      }
-    });
-  });
+  var STOCK=[];
 
   /* ---------- helpers ---------- */
   function fmtNum(n){return n.slice(0,4)+" "+n.slice(4,7)+" "+n.slice(7);}
@@ -537,7 +481,51 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-bet
     $("q").value="";$("fPrice").value="all";$("fNut").value="all";$("fSort").value="pop";S.per=30;render();
   });
 
+
+  /* ---------- Firebase: đọc kho số thật ---------- */
+  var firebaseConfig = {
+  apiKey: "AIzaSyBDlt573f5OLxEinOj-ANpozC4CBkNw-N4",
+  authDomain: "ql-nha-tro-930c5.firebaseapp.com",
+  projectId: "ql-nha-tro-930c5",
+  storageBucket: "ql-nha-tro-930c5.firebasestorage.app",
+  messagingSenderId: "309768263926",
+  appId: "1:309768263926:web:09b15212f4d9eb9743f4d7"
+  };
+  var COLLECTION="sims", CACHE_KEY="sims_cache_v1", CACHE_MS=60000;
+  function showStatus(html){ $("grid").innerHTML='<div class="empty">'+html+'</div>'; $("pager").innerHTML=""; $("count").textContent=""; }
+  function setStock(rows){
+    STOCK=rows.filter(function(r){return r&&/^0\d{9}$/.test(r.number)&&CARRIERS[r.carrier];}).map(function(r,i){
+      return {num:r.number,carrier:r.carrier,cat:r.category||"thuong",price:+r.price||0,nut:nut(r.number),rank:Math.random()};
+    });
+    render();
+    if(!STOCK.length) showStatus("<b>Kho đang trống.</b><br>Hãy thêm số ở trang quản trị.");
+  }
+  function loadStock(){
+    if(String(firebaseConfig.apiKey).indexOf("PASTE")===0){
+      showStatus("<b>Chưa điền cấu hình Firebase.</b><br>Mở file index.html, tìm mục firebaseConfig và dán thông tin dự án của bạn vào.");
+      return;
+    }
+    showStatus("Đang tải kho số…");
+    try{
+      var c=JSON.parse(sessionStorage.getItem(CACHE_KEY)||"null");
+      if(c&&Date.now()-c.t<CACHE_MS){ setStock(c.rows); return; }
+    }catch(e){}
+    Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")
+    ]).then(function(m){
+      var db=m[1].getFirestore(m[0].initializeApp(firebaseConfig));
+      return m[1].getDocs(m[1].collection(db,COLLECTION));
+    }).then(function(snap){
+      var rows=snap.docs.map(function(d){return d.data();});
+      try{sessionStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),rows:rows}));}catch(e){}
+      setStock(rows);
+    }).catch(function(err){
+      showStatus("<b>Không tải được kho số.</b><br>"+esc(err.code||err.message||"Lỗi không rõ")+". Kiểm tra cấu hình Firebase và luật Firestore.");
+    });
+  }
   render();
+  loadStock();
 })();
 </script>
 </body>
