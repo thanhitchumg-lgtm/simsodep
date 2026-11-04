@@ -44,6 +44,10 @@ button,input,select{font:inherit;color:inherit}
 .login{min-height:100vh;display:grid;place-items:center;padding:20px}
 .box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
 .box h1{font-size:22px;margin:18px 0 4px}
+.forgot{text-align:right;margin:-6px 0 8px}
+.linkbtn{border:0;background:none;padding:2px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--teal);text-decoration:underline}
+.linkbtn:hover{color:var(--accent)}
+.linkbtn:disabled{opacity:.5;cursor:default}
 .back{display:block;text-align:center;margin-top:16px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none}
 .back:hover{color:var(--accent)}
 .box p.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
@@ -69,7 +73,7 @@ button,input,select{font:inherit;color:inherit}
 /* app */
 .top{background:var(--card);border-bottom:1px solid var(--line)}
 .top .in{max-width:1080px;margin:0 auto;padding:0 18px;height:60px;display:flex;align-items:center;gap:14px}
-.top .who{margin-left:auto;min-width:0;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .who{min-width:0;flex:1;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 60px;display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;align-items:start}
 @media(max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}}
 .card{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
@@ -143,10 +147,13 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 .cfgblk{margin-bottom:6px}
 
 .cfgwrap{max-width:1080px;margin:14px auto 0;padding:0 18px}
-.listbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:var(--shadow)}
-.listbar input{flex:1 1 220px;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;font-size:15px}
-.listbar input:focus-visible,.listbar select:focus-visible{outline:none;border-color:var(--accent)}
-.listbar select{border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
+.listbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px;display:grid;gap:8px;box-shadow:var(--shadow)}
+.lrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lrow b{width:44px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.lrow input{flex:1 1 200px;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;font-size:15px}
+.lrow select{flex:0 1 auto;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
+#cfgDelSel{flex:1 1 200px}
+.lrow input:focus-visible,.lrow select:focus-visible{outline:none;border-color:var(--accent)}
 .cfginfo{margin-left:auto;font-size:12.5px;color:var(--muted);padding:0 6px;white-space:nowrap}
 .cfgwrap .msg{margin:6px 4px 0}
 .hint:empty{display:none}
@@ -155,10 +162,10 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 @media(max-width:600px){
   .top .in{height:50px;padding:0 12px;gap:10px}
   .cfgwrap{padding:0 12px;margin-top:10px}
-  .listbar{padding:6px;gap:6px}
-  .listbar input{flex:1 1 100%}
-  .listbar select{flex:1 1 auto}
-  .cfginfo{flex:1 1 100%;margin:0;padding:0 4px;text-align:left}
+  .listbar{padding:8px;gap:6px}
+  .lrow b{width:100%}
+  .lrow input{flex:1 1 100%}
+  .lrow select{flex:1 1 auto}
   .wrap{padding:12px 12px 40px;gap:12px}
   .card{padding:14px;border-radius:14px}
   .chead{margin-bottom:10px}
@@ -191,6 +198,7 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
     <form id="loginForm" novalidate>
       <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required></div>
       <div class="field"><label for="pass">Mật khẩu</label><input id="pass" type="password" autocomplete="current-password" required></div>
+      <div class="forgot"><button class="linkbtn" id="forgot" type="button">Quên mật khẩu?</button></div>
       <div class="msg err" id="loginMsg" role="alert"></div>
       <button class="btn block" id="loginBtn" type="submit">Đăng nhập</button>
     </form>
@@ -202,23 +210,28 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 <div id="viewApp" hidden>
   <header class="top">
     <div class="in">
-      <div class="brand"><i aria-hidden="true"></i>Quản trị kho số</div>
       <div class="who" id="who"></div>
-      <button class="btn ghost" id="logout" type="button" style="padding:8px 14px">Đăng xuất</button>
+      <button class="btn ghost" id="logout" type="button" style="padding:8px 14px;margin-left:auto">Đăng xuất</button>
     </div>
   </header>
 
   <div class="cfgwrap">
-    <form class="listbar" id="listBar" autocomplete="off" aria-label="Quản lý nhà mạng và loại số">
-      <label class="sr" for="cfgName">Tên nhà mạng hoặc loại số</label>
-      <input id="cfgName" type="text" list="cfgSuggest" maxlength="30" placeholder="Tên nhà mạng hoặc loại số">
-      <datalist id="cfgSuggest"></datalist>
-      <label class="sr" for="cfgKind">Loại danh sách</label>
-      <select id="cfgKind"><option value="carrier">Nhà mạng</option><option value="cat">Loại số</option></select>
-      <button class="btn sm" id="cfgAdd" type="submit">Thêm</button>
-      <button class="btn danger sm" id="cfgDel" type="button">Xoá</button>
-      <span class="cfginfo" id="cfgInfo"></span>
-    </form>
+    <div class="listbar" aria-label="Quản lý nhà mạng và loại số">
+      <form class="lrow" id="addBar" autocomplete="off">
+        <b>Thêm</b>
+        <label class="sr" for="cfgName">Tên nhà mạng hoặc loại số mới</label>
+        <input id="cfgName" type="text" maxlength="30" placeholder="Tên nhà mạng hoặc loại số mới">
+        <label class="sr" for="cfgKind">Thêm vào danh sách</label>
+        <select id="cfgKind"><option value="carrier">Nhà mạng</option><option value="cat">Loại số</option></select>
+        <button class="btn sm" id="cfgAdd" type="submit">Thêm</button>
+      </form>
+      <div class="lrow">
+        <b>Xoá</b>
+        <label class="sr" for="cfgDelSel">Chọn mục cần xoá</label>
+        <select id="cfgDelSel"></select>
+        <button class="btn danger sm" id="cfgDel" type="button">Xoá</button>
+      </div>
+    </div>
     <div class="msg" id="cfgMsg" role="status"></div>
   </div>
 
@@ -340,7 +353,7 @@ const firebaseConfig = {
 const COLLECTION = "sims";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -384,18 +397,32 @@ const loginErrors = {
   "auth/too-many-requests":"Bạn thử sai quá nhiều lần. Hãy đợi vài phút rồi thử lại.",
   "auth/network-request-failed":"Không kết nối được mạng. Kiểm tra internet rồi thử lại."
 };
+function setLoginMsg(t,type){ const m=$("loginMsg"); m.textContent=t; m.className="msg"+(type?" "+type:""); }
+$("forgot").addEventListener("click",async()=>{
+  setLoginMsg("");
+  if(!configured){ setLoginMsg("Chưa điền cấu hình Firebase trong file admin.html.","err"); return; }
+  const email=$("email").value.trim();
+  if(!email){ setLoginMsg("Nhập email của bạn vào ô Email, rồi bấm Quên mật khẩu.","err"); $("email").focus(); return; }
+  const b=$("forgot"); b.disabled=true;
+  try{
+    await sendPasswordResetEmail(auth,email);
+    setLoginMsg("Đã gửi thư đặt lại mật khẩu tới "+email+" (nếu email này có tài khoản). Kiểm tra cả mục Spam, rồi đăng nhập lại bằng mật khẩu mới.","ok");
+  }catch(err){
+    setLoginMsg(loginErrors[err.code] || "Chưa gửi được thư đặt lại mật khẩu ("+(err.code||"lỗi không rõ")+").","err");
+  }finally{ b.disabled=false; }
+});
 $("loginForm").addEventListener("submit", async e=>{
   e.preventDefault();
-  const msg=$("loginMsg"); msg.textContent="";
-  if(!configured){ msg.textContent="Chưa điền cấu hình Firebase trong file admin.html."; return; }
+  setLoginMsg("");
+  if(!configured){ setLoginMsg("Chưa điền cấu hình Firebase trong file admin.html.","err"); return; }
   const email=$("email").value.trim(), pass=$("pass").value;
-  if(!email||!pass){ msg.textContent="Nhập email và mật khẩu."; return; }
+  if(!email||!pass){ setLoginMsg("Nhập email và mật khẩu.","err"); return; }
   $("loginBtn").disabled=true; $("loginBtn").textContent="Đang đăng nhập…";
   try{
     await signInWithEmailAndPassword(auth,email,pass);
     $("pass").value="";
   }catch(err){
-    msg.textContent = loginErrors[err.code] || "Đăng nhập không thành công ("+(err.code||"lỗi không rõ")+").";
+    setLoginMsg(loginErrors[err.code] || "Đăng nhập không thành công ("+(err.code||"lỗi không rõ")+").","err");
   }finally{
     $("loginBtn").disabled=false; $("loginBtn").textContent="Đăng nhập";
   }
@@ -725,19 +752,24 @@ $("delYes").addEventListener("click",async()=>{
 });
 
 /* ======================================================================
-   7. NHÀ MẠNG VÀ LOẠI SỐ (một dòng: tên + loại danh sách + Thêm/Xoá, lưu ngay)
+   7. NHÀ MẠNG VÀ LOẠI SỐ (hàng Thêm, hàng Xoá bằng listbox, lưu ngay)
    ====================================================================== */
 const countBy = f => { const m={}; ALL.forEach(s=>{ m[s[f]]=(m[s[f]]||0)+1; }); return m; };
 function cfgMsg(t,type){ const m=$("cfgMsg"); m.textContent=t; m.className="msg"+(type?" "+type:""); }
-const kindIsCarrier = () => $("cfgKind").value==="carrier";
-const kindWord = () => kindIsCarrier() ? "nhà mạng" : "loại số";
+const listOf = k => k==="carrier" ? CARRIER_LIST : CAT_LIST;
+const nameOf = x => x.name || x.label;
+const word = k => k==="carrier" ? "nhà mạng" : "loại số";
+
 function renderCfg(){
-  const names=kindIsCarrier() ? CARRIER_LIST.map(c=>c.name) : CAT_LIST.map(k=>k.label);
-  $("cfgSuggest").innerHTML=names.map(n=>'<option value="'+esc(n)+'">').join("");
-  $("cfgInfo").textContent=CARRIER_LIST.length+" nhà mạng · "+CAT_LIST.length+" loại số";
+  const sel=$("cfgDelSel"), keep=sel.value, o=['<option value="">Chọn nhà mạng hoặc loại số cần xoá</option>'];
+  if(CARRIER_LIST.length) o.push('<optgroup label="Nhà mạng">'+CARRIER_LIST.map(c=>'<option value="carrier:'+esc(c.id)+'">'+esc(c.name)+'</option>').join("")+'</optgroup>');
+  if(CAT_LIST.length) o.push('<optgroup label="Loại số">'+CAT_LIST.map(k=>'<option value="cat:'+esc(k.id)+'">'+esc(k.label)+'</option>').join("")+'</optgroup>');
+  sel.innerHTML=o.join("");
+  if([...sel.options].some(x=>x.value===keep)) sel.value=keep;
 }
-$("cfgKind").addEventListener("change",()=>{ renderCfg(); cfgMsg(""); disarmDel(); });
-$("cfgName").addEventListener("input",disarmDel);
+let armTimer=null;
+function disarmDel(){ clearTimeout(armTimer); $("cfgDel").classList.remove("arm"); $("cfgDel").textContent="Xoá"; }
+$("cfgDelSel").addEventListener("change",()=>{ disarmDel(); cfgMsg(""); });
 
 async function saveLists(carriers,categories){
   if(!db||!auth.currentUser){ cfgMsg("Bạn cần đăng nhập lại.","err"); return false; }
@@ -756,41 +788,37 @@ function newId(name,list){
   while(list.some(x=>x.id===id)) id=base+(n++);
   return id;
 }
-const findItem = name => (kindIsCarrier()?CARRIER_LIST:CAT_LIST).find(x=>norm(x.name||x.label)===norm(name));
 
-$("listBar").addEventListener("submit",async e=>{
+$("addBar").addEventListener("submit",async e=>{
   e.preventDefault(); disarmDel();
-  const input=$("cfgName"), name=input.value.trim().replace(/\s+/g," ");
-  if(!name){ cfgMsg("Nhập tên "+kindWord()+" trước khi bấm Thêm.","err"); input.focus(); return; }
-  if(findItem(name)){ cfgMsg("“"+name+"” đã có trong danh sách "+kindWord()+".","err"); return; }
+  const input=$("cfgName"), kind=$("cfgKind").value, name=input.value.trim().replace(/\s+/g," ");
+  if(!name){ cfgMsg("Nhập tên "+word(kind)+" trước khi bấm Thêm.","err"); input.focus(); return; }
+  if(listOf(kind).some(x=>norm(nameOf(x))===norm(name))){ cfgMsg("“"+name+"” đã có trong danh sách "+word(kind)+".","err"); return; }
   const btn=$("cfgAdd"); btn.disabled=true; cfgMsg("");
-  const ok = kindIsCarrier()
+  const ok = kind==="carrier"
     ? await saveLists([...CARRIER_LIST,{id:newId(name,CARRIER_LIST),name,color:PALETTE[CARRIER_LIST.length%PALETTE.length]}],CAT_LIST)
     : await saveLists(CARRIER_LIST,[...CAT_LIST,{id:newId(name,CAT_LIST),label:name}]);
   btn.disabled=false;
-  if(ok){ input.value=""; cfgMsg("Đã thêm "+kindWord()+" “"+name+"”.","ok"); input.focus(); }
+  if(ok){ input.value=""; cfgMsg("Đã thêm "+word(kind)+" “"+name+"”.","ok"); input.focus(); }
 });
 
-let armTimer=null;
-function disarmDel(){ clearTimeout(armTimer); $("cfgDel").classList.remove("arm"); $("cfgDel").textContent="Xoá"; }
 $("cfgDel").addEventListener("click",async()=>{
-  const btn=$("cfgDel"), name=$("cfgName").value.trim();
-  if(!name){ cfgMsg("Nhập hoặc chọn tên "+kindWord()+" cần xoá.","err"); $("cfgName").focus(); return; }
-  const item=findItem(name);
-  if(!item){ cfgMsg("Không có "+kindWord()+" tên “"+name+"” trong danh sách.","err"); return; }
-  const label=item.name||item.label, id=item.id;
-  const used=countBy(kindIsCarrier()?"carrier":"category")[id]||0;
+  const btn=$("cfgDel"), v=$("cfgDelSel").value;
+  if(!v){ cfgMsg("Chọn một nhà mạng hoặc loại số trong danh sách xổ xuống để xoá.","err"); return; }
+  const [kind,id]=v.split(":"), item=listOf(kind).find(x=>x.id===id);
+  if(!item){ cfgMsg("Mục này không còn trong danh sách.","err"); renderCfg(); return; }
+  const label=nameOf(item), used=countBy(kind==="carrier"?"carrier":"category")[id]||0;
   if(used){ cfgMsg("Chưa xoá được “"+label+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
   if(!btn.classList.contains("arm")){            // bấm lần 1: xác nhận
-    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá "+kindWord()+" “"+label+"”?");
+    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá "+word(kind)+" “"+label+"”?");
     armTimer=setTimeout(disarmDel,3000);
     return;
   }
   disarmDel(); btn.disabled=true;
-  const ok = kindIsCarrier() ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
-                             : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
+  const ok = kind==="carrier" ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
+                              : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
   btn.disabled=false;
-  if(ok){ $("cfgName").value=""; cfgMsg("Đã xoá "+kindWord()+" “"+label+"”.","ok"); }
+  if(ok) cfgMsg("Đã xoá "+word(kind)+" “"+label+"”.","ok");
 });
 </script>
 </body>
