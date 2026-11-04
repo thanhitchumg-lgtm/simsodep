@@ -71,8 +71,8 @@ button,input,select{font:inherit;color:inherit}
 .top .in{max-width:1080px;margin:0 auto;padding:0 18px;height:60px;display:flex;align-items:center;gap:14px}
 .top .who{margin-left:auto;min-width:0;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 60px;display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;align-items:start}
-@media(max-width:860px){.wrap{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+@media(max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.card{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .card h2{font-size:18px;margin-bottom:14px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:480px){.row2{grid-template-columns:1fr}}
@@ -141,6 +141,41 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 .addrow input{width:190px;max-width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:15px}
 .addrow input:focus-visible{outline:none;border-color:var(--accent)}
 .cfgblk{margin-bottom:6px}
+
+.cfgwrap{max-width:1080px;margin:14px auto 0;padding:0 18px}
+.listbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:var(--shadow)}
+.listbar input{flex:1 1 220px;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;font-size:15px}
+.listbar input:focus-visible,.listbar select:focus-visible{outline:none;border-color:var(--accent)}
+.listbar select{border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
+.cfginfo{margin-left:auto;font-size:12.5px;color:var(--muted);padding:0 6px;white-space:nowrap}
+.cfgwrap .msg{margin:6px 4px 0}
+.hint:empty{display:none}
+.msg:empty{min-height:0;margin:0}
+.field{margin-bottom:12px}
+@media(max-width:600px){
+  .top .in{height:50px;padding:0 12px;gap:10px}
+  .cfgwrap{padding:0 12px;margin-top:10px}
+  .listbar{padding:6px;gap:6px}
+  .listbar input{flex:1 1 100%}
+  .listbar select{flex:1 1 auto}
+  .cfginfo{flex:1 1 100%;margin:0;padding:0 4px;text-align:left}
+  .wrap{padding:12px 12px 40px;gap:12px}
+  .card{padding:14px;border-radius:14px}
+  .chead{margin-bottom:10px}
+  .card h2{font-size:17px}
+  .field{margin-bottom:8px;gap:3px}
+  .field input,.field select{padding:9px 10px}
+  .field input.mono{font-size:17px}
+  .hint{font-size:12px}
+  .row2{gap:8px}
+  .pvrow{display:none}
+  .msg{margin:0 0 8px}
+  .btn{padding:10px 16px}
+  th{padding:6px 8px}
+  td{padding:6px 8px;font-size:13px}
+  .pager{margin-top:8px}
+  .ltools{margin-bottom:4px}
+}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -169,10 +204,23 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
     <div class="in">
       <div class="brand"><i aria-hidden="true"></i>Quản trị kho số</div>
       <div class="who" id="who"></div>
-      <button class="btn ghost" id="openCfg" type="button" style="padding:8px 14px">Nhà mạng, loại số</button>
       <button class="btn ghost" id="logout" type="button" style="padding:8px 14px">Đăng xuất</button>
     </div>
   </header>
+
+  <div class="cfgwrap">
+    <form class="listbar" id="listBar" autocomplete="off" aria-label="Quản lý nhà mạng và loại số">
+      <label class="sr" for="cfgName">Tên nhà mạng hoặc loại số</label>
+      <input id="cfgName" type="text" list="cfgSuggest" maxlength="30" placeholder="Tên nhà mạng hoặc loại số">
+      <datalist id="cfgSuggest"></datalist>
+      <label class="sr" for="cfgKind">Loại danh sách</label>
+      <select id="cfgKind"><option value="carrier">Nhà mạng</option><option value="cat">Loại số</option></select>
+      <button class="btn sm" id="cfgAdd" type="submit">Thêm</button>
+      <button class="btn danger sm" id="cfgDel" type="button">Xoá</button>
+      <span class="cfginfo" id="cfgInfo"></span>
+    </form>
+    <div class="msg" id="cfgMsg" role="status"></div>
+  </div>
 
   <div class="wrap">
     <section class="card" aria-labelledby="addTitle">
@@ -260,40 +308,6 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
   </div>
 </div>
 
-
-<!-- Cài đặt nhà mạng và loại số -->
-<div class="ov" id="ovCfg" hidden role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
-  <div class="modal small">
-    <h2 id="cfgTitle">Nhà mạng và loại số</h2>
-
-    <div class="cfgblk">
-      <label class="h3" for="lbCarrier">Nhà mạng</label>
-      <div class="lbrow">
-        <select id="lbCarrier" size="4" aria-label="Danh sách nhà mạng"></select>
-        <button class="del" id="delCarrier" type="button">Xoá</button>
-      </div>
-      <div class="addrow">
-        <input id="newCarrier" type="text" maxlength="30" placeholder="Tên nhà mạng mới" autocomplete="off">
-        <button class="btn sm" id="addCarrier" type="button">Thêm</button>
-      </div>
-    </div>
-
-    <div class="cfgblk">
-      <label class="h3" for="lbCat">Loại số</label>
-      <div class="lbrow">
-        <select id="lbCat" size="5" aria-label="Danh sách loại số"></select>
-        <button class="del" id="delCat" type="button">Xoá</button>
-      </div>
-      <div class="addrow">
-        <input id="newCat" type="text" maxlength="30" placeholder="Tên loại số mới" autocomplete="off">
-        <button class="btn sm" id="addCat" type="button">Thêm</button>
-      </div>
-    </div>
-
-    <div class="msg" id="cfgMsg" role="status"></div>
-    <div class="mrow" style="margin-top:0"><button class="btn ghost" id="cfgClose" type="button">Đóng</button></div>
-  </div>
-</div>
 
 <!-- Xác nhận xoá toàn bộ -->
 <div class="ov" id="ovDel" hidden role="alertdialog" aria-modal="true" aria-labelledby="delTitle" aria-describedby="delText">
@@ -475,7 +489,7 @@ function applyConfig(data){
   CATS={}; CAT_LIST.forEach(k=>{CATS[k.id]=k.label;});
   fillSelects(); buildAliases(); refresh(); renderList();
   if(!$("ovBulk").hidden) analyzeBulk();
-  if(!$("ovCfg").hidden) renderCfg();
+  renderCfg();
 }
 
 function startList(){
@@ -556,8 +570,8 @@ $("rows").addEventListener("click",async e=>{
 let modalBusy=false;
 function openModal(id,focusId){ $(id).hidden=false; document.body.style.overflow="hidden"; setTimeout(()=>$(focusId).focus(),30); }
 function closeModal(id){ if(modalBusy) return; $(id).hidden=true; document.body.style.overflow=""; }
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal("ovBulk"); closeModal("ovDel"); closeModal("ovCfg"); } });
-["ovBulk","ovDel","ovCfg"].forEach(id=>$(id).addEventListener("mousedown",e=>{ if(e.target===$(id)) closeModal(id); }));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal("ovBulk"); closeModal("ovDel"); } });
+["ovBulk","ovDel"].forEach(id=>$(id).addEventListener("mousedown",e=>{ if(e.target===$(id)) closeModal(id); }));
 
 async function commitChunks(items, apply, onProgress){   // items → writeBatch, mỗi mẻ 400 thao tác
   for(let i=0;i<items.length;i+=400){
@@ -711,20 +725,19 @@ $("delYes").addEventListener("click",async()=>{
 });
 
 /* ======================================================================
-   7. NHÀ MẠNG VÀ LOẠI SỐ (lưu ở config/lists, mỗi thao tác lưu ngay)
+   7. NHÀ MẠNG VÀ LOẠI SỐ (một dòng: tên + loại danh sách + Thêm/Xoá, lưu ngay)
    ====================================================================== */
 const countBy = f => { const m={}; ALL.forEach(s=>{ m[s[f]]=(m[s[f]]||0)+1; }); return m; };
 function cfgMsg(t,type){ const m=$("cfgMsg"); m.textContent=t; m.className="msg"+(type?" "+type:""); }
+const kindIsCarrier = () => $("cfgKind").value==="carrier";
+const kindWord = () => kindIsCarrier() ? "nhà mạng" : "loại số";
 function renderCfg(){
-  const cv=$("lbCarrier").value, kv=$("lbCat").value;
-  $("lbCarrier").innerHTML=CARRIER_LIST.length ? CARRIER_LIST.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join("") : '<option value="" disabled>(chưa có nhà mạng)</option>';
-  $("lbCat").innerHTML=CAT_LIST.length ? CAT_LIST.map(k=>'<option value="'+esc(k.id)+'">'+esc(k.label)+'</option>').join("") : '<option value="" disabled>(chưa có loại số)</option>';
-  if(CARRIERS[cv]) $("lbCarrier").value=cv;
-  if(CATS[kv]) $("lbCat").value=kv;
+  const names=kindIsCarrier() ? CARRIER_LIST.map(c=>c.name) : CAT_LIST.map(k=>k.label);
+  $("cfgSuggest").innerHTML=names.map(n=>'<option value="'+esc(n)+'">').join("");
+  $("cfgInfo").textContent=CARRIER_LIST.length+" nhà mạng · "+CAT_LIST.length+" loại số";
 }
-function openCfg(){ cfgMsg(""); renderCfg(); openModal("ovCfg","newCarrier"); }
-$("openCfg").addEventListener("click",openCfg);
-$("cfgClose").addEventListener("click",()=>closeModal("ovCfg"));
+$("cfgKind").addEventListener("change",()=>{ renderCfg(); cfgMsg(""); disarmDel(); });
+$("cfgName").addEventListener("input",disarmDel);
 
 async function saveLists(carriers,categories){
   if(!db||!auth.currentUser){ cfgMsg("Bạn cần đăng nhập lại.","err"); return false; }
@@ -743,42 +756,42 @@ function newId(name,list){
   while(list.some(x=>x.id===id)) id=base+(n++);
   return id;
 }
-async function addItem(kind){
-  const input=$(kind==="carrier"?"newCarrier":"newCat"), name=input.value.trim().replace(/\s+/g," ");
-  if(!name){ cfgMsg("Nhập tên trước khi bấm Thêm.","err"); input.focus(); return; }
-  const list=kind==="carrier"?CARRIER_LIST:CAT_LIST, key=x=>norm(kind==="carrier"?x.name:x.label);
-  if(list.some(x=>key(x)===norm(name))){ cfgMsg("“"+name+"” đã có trong danh sách.","err"); return; }
-  const btn=$(kind==="carrier"?"addCarrier":"addCat"); btn.disabled=true; cfgMsg("");
-  const ok = kind==="carrier"
+const findItem = name => (kindIsCarrier()?CARRIER_LIST:CAT_LIST).find(x=>norm(x.name||x.label)===norm(name));
+
+$("listBar").addEventListener("submit",async e=>{
+  e.preventDefault(); disarmDel();
+  const input=$("cfgName"), name=input.value.trim().replace(/\s+/g," ");
+  if(!name){ cfgMsg("Nhập tên "+kindWord()+" trước khi bấm Thêm.","err"); input.focus(); return; }
+  if(findItem(name)){ cfgMsg("“"+name+"” đã có trong danh sách "+kindWord()+".","err"); return; }
+  const btn=$("cfgAdd"); btn.disabled=true; cfgMsg("");
+  const ok = kindIsCarrier()
     ? await saveLists([...CARRIER_LIST,{id:newId(name,CARRIER_LIST),name,color:PALETTE[CARRIER_LIST.length%PALETTE.length]}],CAT_LIST)
     : await saveLists(CARRIER_LIST,[...CAT_LIST,{id:newId(name,CAT_LIST),label:name}]);
   btn.disabled=false;
-  if(ok){ input.value=""; cfgMsg("Đã thêm “"+name+"”.","ok"); input.focus(); }
-}
-$("addCarrier").addEventListener("click",()=>addItem("carrier"));
-$("addCat").addEventListener("click",()=>addItem("cat"));
-$("newCarrier").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addItem("carrier"); } });
-$("newCat").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addItem("cat"); } });
+  if(ok){ input.value=""; cfgMsg("Đã thêm "+kindWord()+" “"+name+"”.","ok"); input.focus(); }
+});
 
-async function removeItem(kind){
-  const sel=$(kind==="carrier"?"lbCarrier":"lbCat"), id=sel.value, btn=$(kind==="carrier"?"delCarrier":"delCat");
-  if(!id){ cfgMsg("Chọn một mục trong danh sách trước khi xoá.","err"); return; }
-  const item=(kind==="carrier"?CARRIER_LIST:CAT_LIST).find(x=>x.id===id), name=item?(item.name||item.label):id;
-  const used=countBy(kind==="carrier"?"carrier":"category")[id]||0;
-  if(used){ cfgMsg("Chưa xoá được “"+name+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
+let armTimer=null;
+function disarmDel(){ clearTimeout(armTimer); $("cfgDel").classList.remove("arm"); $("cfgDel").textContent="Xoá"; }
+$("cfgDel").addEventListener("click",async()=>{
+  const btn=$("cfgDel"), name=$("cfgName").value.trim();
+  if(!name){ cfgMsg("Nhập hoặc chọn tên "+kindWord()+" cần xoá.","err"); $("cfgName").focus(); return; }
+  const item=findItem(name);
+  if(!item){ cfgMsg("Không có "+kindWord()+" tên “"+name+"” trong danh sách.","err"); return; }
+  const label=item.name||item.label, id=item.id;
+  const used=countBy(kindIsCarrier()?"carrier":"category")[id]||0;
+  if(used){ cfgMsg("Chưa xoá được “"+label+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
   if(!btn.classList.contains("arm")){            // bấm lần 1: xác nhận
-    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá “"+name+"”?");
-    setTimeout(()=>{ if(btn.isConnected){ btn.classList.remove("arm"); btn.textContent="Xoá"; } },3000);
+    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá "+kindWord()+" “"+label+"”?");
+    armTimer=setTimeout(disarmDel,3000);
     return;
   }
-  btn.classList.remove("arm"); btn.textContent="Xoá"; btn.disabled=true;
-  const ok = kind==="carrier" ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
-                              : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
+  disarmDel(); btn.disabled=true;
+  const ok = kindIsCarrier() ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
+                             : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
   btn.disabled=false;
-  if(ok) cfgMsg("Đã xoá “"+name+"”.","ok");
-}
-$("delCarrier").addEventListener("click",()=>removeItem("carrier"));
-$("delCat").addEventListener("click",()=>removeItem("cat"));
+  if(ok){ $("cfgName").value=""; cfgMsg("Đã xoá "+kindWord()+" “"+label+"”.","ok"); }
+});
 </script>
 </body>
 </html>
