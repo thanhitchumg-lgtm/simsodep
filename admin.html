@@ -147,12 +147,23 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
 .cfgblk{margin-bottom:6px}
 
 .cfgwrap{max-width:1080px;margin:14px auto 0;padding:0 18px}
-.listbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px;display:grid;gap:8px;box-shadow:var(--shadow)}
-.lrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.listbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;box-shadow:var(--shadow)}
+.lrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
 .lrow b{width:44px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .lrow input{flex:1 1 200px;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;font-size:15px}
 .lrow select{flex:0 1 auto;min-width:0;border:1.5px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 10px;font-size:15px}
-#cfgDelSel{flex:1 1 200px}
+#addBar{flex-wrap:nowrap}
+#addBar input{flex:1 1 0;min-width:0}
+#addBar select,#addBar .btn{flex:none}
+.clist{display:flex;gap:8px;align-items:flex-start}
+.clist b{width:74px;flex:none;white-space:nowrap;padding-top:5px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
+.chips .none{font-size:13px;color:var(--muted);padding-top:4px}
+.citem{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 3px 2px 11px;font-size:13.5px;max-width:100%}
+.citem span{overflow-wrap:anywhere}
+.cx{border:0;background:transparent;width:22px;height:22px;border-radius:50%;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;flex:none;padding:0}
+.cx:hover{background:var(--bad);color:#fff}
+.cx.arm{width:auto;padding:0 9px;background:var(--bad);color:#fff;font-size:12px;font-weight:700}
 .lrow input:focus-visible,.lrow select:focus-visible{outline:none;border-color:var(--accent)}
 .cfginfo{margin-left:auto;font-size:12.5px;color:var(--muted);padding:0 6px;white-space:nowrap}
 .cfgwrap .msg{margin:6px 4px 0}
@@ -163,9 +174,11 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
   .top .in{height:50px;padding:0 12px;gap:10px}
   .cfgwrap{padding:0 12px;margin-top:10px}
   .listbar{padding:8px;gap:6px}
-  .lrow b{width:100%}
-  .lrow input{flex:1 1 100%}
-  .lrow select{flex:1 1 auto}
+  #addBar b{display:none}
+  #addBar{gap:6px}
+  #addBar input{font-size:16px;padding:9px 10px}
+  #addBar select{padding:9px 6px;font-size:14px}
+  .clist b{width:62px;font-size:11px}
   .wrap{padding:12px 12px 40px;gap:12px}
   .card{padding:14px;border-radius:14px}
   .chead{margin-bottom:10px}
@@ -225,12 +238,8 @@ textarea:focus-visible{outline:none;border-color:var(--accent)}
         <select id="cfgKind"><option value="carrier">Nhà mạng</option><option value="cat">Loại số</option></select>
         <button class="btn sm" id="cfgAdd" type="submit">Thêm</button>
       </form>
-      <div class="lrow">
-        <b>Xoá</b>
-        <label class="sr" for="cfgDelSel">Chọn mục cần xoá</label>
-        <select id="cfgDelSel"></select>
-        <button class="btn danger sm" id="cfgDel" type="button">Xoá</button>
-      </div>
+      <div class="clist"><b>Nhà mạng</b><div class="chips" id="chipCarrier"></div></div>
+      <div class="clist"><b>Loại số</b><div class="chips" id="chipCat"></div></div>
     </div>
     <div class="msg" id="cfgMsg" role="status"></div>
   </div>
@@ -760,16 +769,16 @@ const listOf = k => k==="carrier" ? CARRIER_LIST : CAT_LIST;
 const nameOf = x => x.name || x.label;
 const word = k => k==="carrier" ? "nhà mạng" : "loại số";
 
+function chipsHtml(kind,list){
+  return list.length ? list.map(x=>'<span class="citem"><span>'+esc(nameOf(x))+'</span><button class="cx" type="button" data-kind="'+kind+'" data-id="'+esc(x.id)+'" aria-label="Xoá '+esc(nameOf(x))+'">×</button></span>').join("")
+                     : '<span class="none">(chưa có)</span>';
+}
 function renderCfg(){
-  const sel=$("cfgDelSel"), keep=sel.value, o=['<option value="">Chọn nhà mạng hoặc loại số cần xoá</option>'];
-  if(CARRIER_LIST.length) o.push('<optgroup label="Nhà mạng">'+CARRIER_LIST.map(c=>'<option value="carrier:'+esc(c.id)+'">'+esc(c.name)+'</option>').join("")+'</optgroup>');
-  if(CAT_LIST.length) o.push('<optgroup label="Loại số">'+CAT_LIST.map(k=>'<option value="cat:'+esc(k.id)+'">'+esc(k.label)+'</option>').join("")+'</optgroup>');
-  sel.innerHTML=o.join("");
-  if([...sel.options].some(x=>x.value===keep)) sel.value=keep;
+  $("chipCarrier").innerHTML=chipsHtml("carrier",CARRIER_LIST);
+  $("chipCat").innerHTML=chipsHtml("cat",CAT_LIST);
 }
 let armTimer=null;
-function disarmDel(){ clearTimeout(armTimer); $("cfgDel").classList.remove("arm"); $("cfgDel").textContent="Xoá"; }
-$("cfgDelSel").addEventListener("change",()=>{ disarmDel(); cfgMsg(""); });
+function disarmDel(){ clearTimeout(armTimer); document.querySelectorAll(".cx.arm").forEach(b=>{b.classList.remove("arm"); b.textContent="×";}); }
 
 async function saveLists(carriers,categories){
   if(!db||!auth.currentUser){ cfgMsg("Bạn cần đăng nhập lại.","err"); return false; }
@@ -802,23 +811,21 @@ $("addBar").addEventListener("submit",async e=>{
   if(ok){ input.value=""; cfgMsg("Đã thêm "+word(kind)+" “"+name+"”.","ok"); input.focus(); }
 });
 
-$("cfgDel").addEventListener("click",async()=>{
-  const btn=$("cfgDel"), v=$("cfgDelSel").value;
-  if(!v){ cfgMsg("Chọn một nhà mạng hoặc loại số trong danh sách xổ xuống để xoá.","err"); return; }
-  const [kind,id]=v.split(":"), item=listOf(kind).find(x=>x.id===id);
-  if(!item){ cfgMsg("Mục này không còn trong danh sách.","err"); renderCfg(); return; }
+document.querySelector(".listbar").addEventListener("click",async e=>{
+  const btn=e.target.closest(".cx"); if(!btn) return;
+  const kind=btn.dataset.kind, id=btn.dataset.id, item=listOf(kind).find(x=>x.id===id);
+  if(!item){ renderCfg(); return; }
   const label=nameOf(item), used=countBy(kind==="carrier"?"carrier":"category")[id]||0;
-  if(used){ cfgMsg("Chưa xoá được “"+label+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
+  if(used){ disarmDel(); cfgMsg("Chưa xoá được “"+label+"” vì còn "+used.toLocaleString("vi-VN")+" số đang dùng. Hãy xoá hoặc đổi các số đó trước.","err"); return; }
   if(!btn.classList.contains("arm")){            // bấm lần 1: xác nhận
-    btn.classList.add("arm"); btn.textContent="Bấm lại để xoá"; cfgMsg("Xoá "+word(kind)+" “"+label+"”?");
-    armTimer=setTimeout(disarmDel,3000);
+    disarmDel(); btn.classList.add("arm"); btn.textContent="Xoá?"; cfgMsg("Bấm lại để xoá "+word(kind)+" “"+label+"”.");
+    armTimer=setTimeout(()=>{ disarmDel(); cfgMsg(""); },3000);
     return;
   }
   disarmDel(); btn.disabled=true;
   const ok = kind==="carrier" ? await saveLists(CARRIER_LIST.filter(x=>x.id!==id),CAT_LIST)
                               : await saveLists(CARRIER_LIST,CAT_LIST.filter(x=>x.id!==id));
-  btn.disabled=false;
-  if(ok) cfgMsg("Đã xoá "+word(kind)+" “"+label+"”.","ok");
+  if(ok) cfgMsg("Đã xoá "+word(kind)+" “"+label+"”.","ok"); else btn.disabled=false;
 });
 </script>
 </body>
